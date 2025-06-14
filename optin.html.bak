@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -60,11 +61,5 @@
     <h2>📝 Example Message</h2>
     <p><strong>AI AnswerLine:</strong> Hello! Your token balance is low. Visit <a href="https://aianswerline.live/pay">https://aianswerline.live/pay</a> to top up. Reply HELP for support or STOP to unsubscribe.</p>
   </div>
-
-  <p style="font-size: 14px; margin-top: 30px;">
-    By continuing, you agree to our
-    <a href="/privacy.html" target="_blank">Privacy Policy</a> and
-    <a href="/terms.html" target="_blank">Terms of Service</a>.
-  </p>
 </body>
 </html>
