@@ -1,0 +1,16 @@
+# Версия 1.0 (2025-06-15)
+# Reveal GitHub Actions runner public IP
+
+name: Reveal GitHub IP
+
+on:
+  workflow_dispatch:
+
+jobs:
+  reveal-ip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show GitHub runner IP
+        run: |
+          echo "GitHub runner public IP:"
+          curl https://ipinfo.io/ip
