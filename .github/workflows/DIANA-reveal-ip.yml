@@ -1,0 +1,19 @@
+# Версия 1.0 (2025-06-15)
+# DIANA: Debug Incoming Access Network Address
+
+name: DIANA — Reveal GitHub Runner IP
+
+on:
+  workflow_dispatch:
+
+jobs:
+  reveal-ip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reveal GitHub Runner Public IP
+        run: |
+          echo "===> DIANA scan starting..."
+          echo -n "GitHub runner IP: "
+          curl -s https://ipinfo.io/ip
+          echo
+          echo "===> DIANA scan complete."
