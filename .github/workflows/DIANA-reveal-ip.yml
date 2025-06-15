@@ -1,19 +1,24 @@
-# Версия 1.0 (2025-06-15)
-# DIANA: Debug Incoming Access Network Address
+# Версия 1.1 (2025-06-15)
+# DIANA: Network Debugging — full trace
 
-name: DIANA — Reveal GitHub Runner IP
+name: DIANA: Full Debug Trace
 
 on:
   workflow_dispatch:
 
 jobs:
-  reveal-ip:
+  netcheck:
     runs-on: ubuntu-latest
     steps:
-      - name: Reveal GitHub Runner Public IP
+      - name: DNS resolution
         run: |
-          echo "===> DIANA scan starting..."
-          echo -n "GitHub runner IP: "
-          curl -s https://ipinfo.io/ip
-          echo
-          echo "===> DIANA scan complete."
+          echo "[DNS] github.com:"
+          nslookup github.com
+      - name: Outbound curl to GitHub
+        run: |
+          echo "[CURL] github.com:22"
+          curl -v telnet://github.com:22 || true
+      - name: Outbound curl to google.com
+        run: |
+          echo "[CURL] google.com"
+          curl -s https://google.com || echo "FAILED"
