@@ -1,0 +1,30 @@
+# Версия 1.0 (2025-06-16)
+# DIANA_Diag: предварительная диагностика SSH, порта и сетевого соединения
+
+name: DIANA:DIAG workflow for SSH diagnostics
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/DIANA_Diag.yml
+
+jobs:
+  diag:
+    name: SSH diagnostics
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping target server
+        run: ping -c 4 "${{ secrets.PROD_HOST }}"
+
+      - name: Check port 2222 with curl
+        run: |
+          curl -v telnet://${{ secrets.PROD_HOST }}:2222 || echo "Port 2222 not reachable"
+
+      - name: Try SSH connection
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PROD_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh -o StrictHostKeyChecking=no -p 2222 ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }} "echo '✅ SSH OK'" || echo "❌ SSH Failed"
