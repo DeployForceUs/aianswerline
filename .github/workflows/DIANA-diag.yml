@@ -1,0 +1,32 @@
+name: DIANA:DIAG – Connection & Port Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diag:
+    name: Diagnostic Check via SSH port
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔍 Print diagnostic start
+        run: echo "Starting DIANA:DIAG at $(date)"
+
+      - name: 🌐 Ping server
+        run: ping -c 3 "${{ secrets.PROD_HOST }}"
+
+      - name: 🔌 Check port 2222 (TCP)
+        run: |
+          timeout 5 bash -c "</dev/tcp/${{ secrets.PROD_HOST }}/2222" \
+          && echo "✅ Port 2222 is open" \
+          || echo "❌ Port 2222 is CLOSED"
+
+      - name: 🚪 SSH dry-run (no command)
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_KEY }}
+          port: 2222
+          script: |
+            echo "✅ SSH login to $HOST succeeded via port 2222"
