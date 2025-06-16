@@ -1,4 +1,4 @@
-name: DIANA:DIAG - Connection diagnostics
+name: Dianadiagnosis - Connection diagnostics
 
 on:
   workflow_dispatch:
@@ -13,19 +13,19 @@ jobs:
     - name: 🔍 Ping server
       run: ping -c 4 ${{ secrets.PROD_HOST }}
 
-    - name: 🧪 Check port 22 (SSH)
-      run: nc -vz -w5 ${{ secrets.PROD_HOST }} 22 || echo "❌ Port 22 is unreachable"
+    - name:   Check port 22 (SSH)
+      run: nc -vz -w5 ${{ secrets.PROD_HOST }} 22 || echo "  Port 22 is unreachable"
 
     - name: 🌐 Curl HTTP (port 80)
-      run: curl -I --max-time 5 http://${{ secrets.PROD_HOST }} || echo "❌ Port 80 not responding"
+      run: curl -I --max-time 5 http://${{ secrets.PROD_HOST }} || echo "  Port 80 not responding"
 
     - name: 🔒 Curl HTTPS (port 443)
-      run: curl -I --max-time 5 https://${{ secrets.PROD_HOST }} || echo "❌ Port 443 not responding"
+      run: curl -I --max-time 5 https://${{ secrets.PROD_HOST }} || echo "  Port 443 not responding"
 
     - name: 🛰️ Optional: Traceroute
       run: |
         sudo apt-get update && sudo apt-get install -y traceroute
         traceroute ${{ secrets.PROD_HOST }}
 
-    - name: ✅ Diagnostic completed
-      run: echo "DIANA:DIAG completed. Check above for any ❌ indicators."
+    - name:   Diagnostic completed
+      run: echo "DIANA:DIAG completed. Check above for any   indicators."
