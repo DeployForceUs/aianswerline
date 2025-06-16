@@ -1,0 +1,34 @@
+# Версия 1.0 (2025-06-16)
+# DIANA-Diag: Полная диагностика SSH-соединения перед деплоем
+
+name: DIANA_Diag SSH diagnostics
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/DIANA-Diag.yml'
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print public runner IP
+        run: curl -s https://ipinfo.io/ip
+
+      - name: Ping PROD_HOST
+        run: ping -c 4 "${{ secrets.PROD_HOST }}"
+
+      - name: Curl to PROD_HOST:2222
+        run: |
+          echo | timeout 5s curl -v telnet://${{ secrets.PROD_HOST }}:2222 || echo "Curl failed"
+
+      - name: Traceroute to PROD_HOST
+        run: sudo traceroute "${{ secrets.PROD_HOST }}"
+
+      - name: Test SSH connection to PROD_HOST:2222
+        run: |
+          echo "$SSH_KEY" > temp_key && chmod 600 temp_key
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -p 2222 -i temp_key ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }} exit || echo "SSH failed"
+        env:
+          SSH_KEY: ${{ secrets.PROD_KEY }}
