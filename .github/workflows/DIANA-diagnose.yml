@@ -22,7 +22,7 @@ jobs:
     - name: 🔒 Curl HTTPS (port 443)
       run: curl -I --max-time 5 https://${{ secrets.PROD_HOST }} || echo "  Port 443 not responding"
 
-    - name: 🛰️ Optional: Traceroute
+    - name: Traceroute
       run: |
         sudo apt-get update && sudo apt-get install -y traceroute
         traceroute ${{ secrets.PROD_HOST }}
