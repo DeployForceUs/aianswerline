@@ -1,34 +1,36 @@
-# Версия 1.0 (2025-06-16)
-# DIANA-Diag: Полная диагностика SSH-соединения перед деплоем
-
-name: DIANA_Diag SSH diagnostics
+name: DIANA:DIAG - Connection diagnostics
 
 on:
   workflow_dispatch:
   push:
-    paths:
-      - '.github/workflows/DIANA-Diag.yml'
+    branches: [master]
 
 jobs:
-  diagnostics:
+  diagnose:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Print public runner IP
-        run: curl -s https://ipinfo.io/ip
+    - name: 🔍 Ping server
+      run: |
+        if command -v ping; then ping -c 4 ${{ secrets.PROD_HOST }}; else echo "❌ ping not available"; fi
 
-      - name: Ping PROD_HOST
-        run: ping -c 4 "${{ secrets.PROD_HOST }}"
+    - name: 🧪 Check port 22 (SSH)
+      run: |
+        if command -v nc; then nc -vz -w5 ${{ secrets.PROD_HOST }} 22 || echo "❌ Port 22 is unreachable"; else echo "❌ nc not available"; fi
 
-      - name: Curl to PROD_HOST:2222
-        run: |
-          echo | timeout 5s curl -v telnet://${{ secrets.PROD_HOST }}:2222 || echo "Curl failed"
+    - name: 🌐 Curl HTTP (port 80)
+      run: curl -I --max-time 5 http://${{ secrets.PROD_HOST }} || echo "❌ Port 80 not responding"
 
-      - name: Traceroute to PROD_HOST
-        run: sudo traceroute "${{ secrets.PROD_HOST }}"
+    - name: 🔒 Curl HTTPS (port 443)
+      run: curl -I --max-time 5 https://${{ secrets.PROD_HOST }} || echo "❌ Port 443 not responding"
 
-      - name: Test SSH connection to PROD_HOST:2222
-        run: |
-          echo "$SSH_KEY" > temp_key && chmod 600 temp_key
-          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -p 2222 -i temp_key ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }} exit || echo "SSH failed"
-        env:
-          SSH_KEY: ${{ secrets.PROD_KEY }}
+    - name: 🛰️ Optional: Traceroute
+      run: |
+        if command -v traceroute; then
+          traceroute ${{ secrets.PROD_HOST }}
+        else
+          echo "⚠️ traceroute not installed"
+        fi
+
+    - name: ✅ Diagnostic completed
+      run: echo "DIANA:DIAG completed. Check above for any ❌ indicators."
