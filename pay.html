@@ -1,0 +1,73 @@
+<!-- Версия 1.4 (2025-06-16) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Checkout</title>
+  <style>
+    body {
+      background-color: #f2f4f7;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .checkout-box {
+      background: white;
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+      width: 360px;
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 24px;
+      text-align: center;
+    }
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+      background-color: #0069d9;
+    }
+    .note {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #999;
+    }
+    .version {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 11px;
+      color: #bbb;
+    }
+  </style>
+</head>
+<body>
+  <div class="checkout-box">
+    <h2>Complete Your Payment</h2>
+    <input type="text" placeholder="Card number" />
+    <input type="text" placeholder="MM/YY" />
+    <input type="text" placeholder="CVC" />
+    <button onclick="alert('Payments are not yet enabled. Please check back soon.')">Pay $49.99</button>
+    <div class="note">Payment gateway is temporarily unavailable.<br/>Please try again later.</div>
+    <div class="version">Version 1.4 – June 16, 2025</div>
+  </div>
+</body>
+</html>
