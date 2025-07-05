@@ -1,0 +1,41 @@
+<!-- Версия 1.0 (2025-07-04) -->
+<!-- Страница покупки токенов -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Buy Tokens</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        .token-option {
+            margin: 15px;
+        }
+        button {
+            padding: 10px 25px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🪙 Buy Tokens</h1>
+    <form method="POST" action="/pay">
+        <div class="token-option">
+            <input type="radio" id="tokens5" name="amount" value="5" checked>
+            <label for="tokens5">5 tokens – $1.99</label>
+        </div>
+        <div class="token-option">
+            <input type="radio" id="tokens10" name="amount" value="10">
+            <label for="tokens10">10 tokens – $3.49</label>
+        </div>
+        <div class="token-option">
+            <input type="radio" id="tokens20" name="amount" value="20">
+            <label for="tokens20">20 tokens – $5.99</label>
+        </div>
+        <button type="submit">💳 Pay Now</button>
+    </form>
+</body>
+</html>

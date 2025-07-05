@@ -1,8 +1,7 @@
-# Версия 3.3 (2025-07-04)
-# ✅ Полный цикл токенов (создание, списание, ноль токенов)
-# ✅ Чистая XML-обработка (без лишнего)
-# ✅ Логика протестирована локально и по внешнему номеру
-# ✅ Готовность к интеграции модуля оплаты (addtokens.py)
+# Версия 3.4 (2025-07-04)
+# ✅ Подключён модуль /addtokens (HTML-форма)
+# ✅ Готовность к визуальной интеграции оплаты
+# ✅ Логика токенов и webhook'ов остаётся без изменений
 
 import os
 import psycopg2
@@ -14,9 +13,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from twilio.twiml.messaging_response import MessagingResponse
 
+# === .env ===
 load_dotenv(dotenv_path="/opt/aianswerline/.env")
 
+# === FastAPI App ===
 app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -24,6 +26,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# === Подключение подмодуля /addtokens ===
+import addtokens
+app.mount("/", addtokens.app)
+
+# === DB Connect ===
 conn = psycopg2.connect(
     dbname=os.getenv("DB_NAME"),
     user=os.getenv("DB_USER"),
@@ -34,8 +41,10 @@ conn = psycopg2.connect(
 conn.autocommit = True
 cur = conn.cursor()
 
+# === OpenAI ===
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# === Webhook от Twilio ===
 @app.post("/twilio-hook", response_class=PlainTextResponse)
 async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
     print(f"[Twilio SMS] 📩 From {From}: {Body}")
@@ -59,7 +68,7 @@ async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
 
     if tokens <= 0:
         resp = MessagingResponse()
-        resp.message("⚠️ You've run out of tokens.\nBuy more here:\nhttps://yourdomain.com/pay")
+        resp.message("⚠️ You've run out of tokens.\nBuy more here:\nhttps://aianswerline.live/addtokens")
         return str(resp)
 
     cur.execute("UPDATE users SET tokens_balance = tokens_balance - 1 WHERE id = %s", (user_id,))
@@ -85,11 +94,13 @@ async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
     resp.message(gpt_response)
     return str(resp)
 
+# === Twilio Delivery Status Webhook ===
 @app.post("/twilio-status")
 async def twilio_status(status_data: dict):
     print("[Twilio STATUS] 📡", status_data)
     return {"status": "received"}
 
+# === Локальный тест ручкой ===
 @app.post("/chat", response_class=PlainTextResponse)
 async def chat(phone_number: str = Form(...), message: str = Form(...)):
     print(f"[TEST CHAT] 📲 {phone_number}: {message}")
