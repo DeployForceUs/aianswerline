@@ -1,7 +1,7 @@
-# Версия 3.4 (2025-07-04)
-# ✅ Подключён модуль /addtokens (HTML-форма)
-# ✅ Готовность к визуальной интеграции оплаты
-# ✅ Логика токенов и webhook'ов остаётся без изменений
+# Версия 3.5 (2025-07-05)
+# ✅ Исправлено: app.mount("/") -> app.mount("/addtokens")
+# ✅ Все endpoint'ы теперь не конфликтуют
+# ✅ Чистый FastAPI с webhook'ами и OpenAI логикой
 
 import os
 import psycopg2
@@ -18,17 +18,11 @@ load_dotenv(dotenv_path="/opt/aianswerline/.env")
 
 # === FastAPI App ===
 app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 # === Подключение подмодуля /addtokens ===
 import addtokens
-app.mount("/", addtokens.app)
+app.mount("/addtokens", addtokens.app)
 
 # === DB Connect ===
 conn = psycopg2.connect(
