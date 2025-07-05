@@ -1,32 +1,26 @@
-# Версия 1.0.1 (2025-07-05)
-# Direct call to Square API without SDK — .env подключён
+# Версия 2.1 (2025-07-05)
+# ✅ Использует APIRouter
+# ✅ GET /addtokens/{phone} → редирект на Square
+# ✅ POST /addtokens → (заглушка)
+# ✅ Готово к расширению логики
 
-from fastapi import FastAPI, Request
-import httpx
+from fastapi import APIRouter, Request
+from fastapi.responses import RedirectResponse
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI()
+router = APIRouter()
+SQUARE_LINK_BASE = "https://square.link/u/RjeggMHg"
 
-SQUARE_ACCESS_TOKEN = os.getenv("SQUARE_ACCESS_TOKEN")
-SQUARE_API_URL = "https://connect.squareup.com/v2/customers"
+@router.get("/{phone}")
+async def redirect_to_square(phone: str):
+    square_link = f"{SQUARE_LINK_BASE}?ref={phone}"
+    return RedirectResponse(url=square_link)
 
-@app.post("/addtokens")
+@router.post("/")
 async def add_tokens(request: Request):
     data = await request.json()
-
-    headers = {
-        "Authorization": f"Bearer {SQUARE_ACCESS_TOKEN}",
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-    }
-
-    async with httpx.AsyncClient() as client:
-        response = await client.post(SQUARE_API_URL, json=data, headers=headers)
-
-    return {
-        "status": response.status_code,
-        "square_response": response.json()
-    }
+    print("[ADD TOKENS POST] 📦", data)
+    return {"status": "ok", "message": "POST endpoint placeholder"}

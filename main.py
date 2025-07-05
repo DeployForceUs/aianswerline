@@ -1,10 +1,8 @@
-# Версия 3.6 (2025-07-05)
-# ✅ XML полностью отключён (MessagingResponse удалён)
-# ✅ Основной файл — main.py, поднимается через systemd
-# ✅ Endpoint /twilio-hook возвращает простой текст
-# ✅ Все запросы теперь работают как SMS и как curl
-# ✅ systemd: /etc/systemd/system/fastapi-gateway.service указывает на main:app
-# ✅ app_tokens.py больше не используется
+# Версия 3.8 (2025-07-05)
+# ✅ XML отключён, только текст
+# ✅ Добавлена персональная ссылка на оплату по номеру: /addtokens/{номер}
+# ✅ Подключено по фэншую через include_router
+# ✅ Всё остальное без изменений
 
 import os
 import psycopg2
@@ -15,16 +13,14 @@ from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 
-# === .env ===
 load_dotenv(dotenv_path="/opt/aianswerline/.env")
 
-# === FastAPI App ===
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# === Подключение подмодуля /addtokens ===
-import addtokens
-app.mount("/addtokens", addtokens.app)
+# === Подключение /addtokens по фэншую ===
+from addtokens import router as addtokens_router
+app.include_router(addtokens_router, prefix="/addtokens")
 
 # === DB Connect ===
 conn = psycopg2.connect(
@@ -40,7 +36,6 @@ cur = conn.cursor()
 # === OpenAI ===
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# === Webhook от Twilio ===
 @app.post("/twilio-hook", response_class=PlainTextResponse)
 async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
     print(f"[Twilio SMS] 📩 From {From}: {Body}")
@@ -63,7 +58,9 @@ async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
         """, (user_id, 2, 'system', 'Initial 2 tokens for new user', datetime.utcnow()))
 
     if tokens <= 0:
-        return "⚠️ You've run out of tokens.\nBuy more here:\nhttps://aianswerline.live/addtokens"
+        phone_clean = From.lstrip("+")
+        payment_url = f"https://aianswerline.live/addtokens/{phone_clean}"
+        return f"⚠️ You've run out of tokens.\nBuy more here:\n{payment_url}"
 
     cur.execute("UPDATE users SET tokens_balance = tokens_balance - 1 WHERE id = %s", (user_id,))
     cur.execute("""
@@ -86,13 +83,11 @@ async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
 
     return gpt_response
 
-# === Twilio Delivery Status Webhook ===
 @app.post("/twilio-status")
 async def twilio_status(status_data: dict):
     print("[Twilio STATUS] 📡", status_data)
     return {"status": "received"}
 
-# === Локальный тест ручкой ===
 @app.post("/chat", response_class=PlainTextResponse)
 async def chat(phone_number: str = Form(...), message: str = Form(...)):
     print(f"[TEST CHAT] 📲 {phone_number}: {message}")
