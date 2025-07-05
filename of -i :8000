@@ -1,0 +1,11 @@
+[0;1;32m●[0m fastapi-gateway.service - FastAPI Gateway Service
+     Loaded: loaded (]8;;file://airline/etc/systemd/system/fastapi-gateway.service/etc/systemd/system/fastapi-gateway.service]8;;; [0;1;32menabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;32mactive (running)[0m since Fri 2025-07-04 17:36:16 EDT; 8ms ago
+   Main PID: 97671 (uvicorn)
+      Tasks: 1 (limit: 2269)
+     Memory: 2.6M (peak: 2.6M)
+        CPU: 5ms
+     CGroup: /system.slice/fastapi-gateway.service
+             └─[0;38;5;245m97671 /opt/aianswerline/venv/bin/python3 /opt/aianswerline/venv/bin/uvicorn app_tokens:app --host 0.0.0.0 --port 8000[0m
+
+Jul 04 17:36:16 airline systemd[1]: Started fastapi-gateway.service - FastAPI Gateway Service.

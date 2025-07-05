@@ -1,8 +1,8 @@
-# Версия 3.0 (2025-07-04)
-# ✅ Полная миграция на FastAPI
-# ✅ Поддержка OpenAI, Twilio, PostgreSQL
-# ✅ /twilio-hook, /twilio-status, /chat (тест)
-# ✅ Списывание токенов, регистрация новых пользователей
+# Версия 3.3 (2025-07-04)
+# ✅ Полный цикл токенов (создание, списание, ноль токенов)
+# ✅ Чистая XML-обработка (без лишнего)
+# ✅ Логика протестирована локально и по внешнему номеру
+# ✅ Готовность к интеграции модуля оплаты (addtokens.py)
 
 import os
 import psycopg2
@@ -14,12 +14,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from twilio.twiml.messaging_response import MessagingResponse
 
-# === .env ===
 load_dotenv(dotenv_path="/opt/aianswerline/.env")
 
-# === FastAPI app ===
 app = FastAPI()
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -27,7 +24,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# === DB connect ===
 conn = psycopg2.connect(
     dbname=os.getenv("DB_NAME"),
     user=os.getenv("DB_USER"),
@@ -38,22 +34,18 @@ conn = psycopg2.connect(
 conn.autocommit = True
 cur = conn.cursor()
 
-# === OpenAI client ===
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# === /twilio-hook (Twilio webhook) ===
 @app.post("/twilio-hook", response_class=PlainTextResponse)
 async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
     print(f"[Twilio SMS] 📩 From {From}: {Body}")
 
-    # Поиск юзера
     cur.execute("SELECT id, tokens_balance FROM users WHERE phone_number = %s", (From,))
     row = cur.fetchone()
 
     if row:
         user_id, tokens = row
     else:
-        # Новый юзер
         cur.execute("""
             INSERT INTO users (phone_number, verification_code, is_verified, tokens_balance, created_at)
             VALUES (%s, %s, %s, %s, %s) RETURNING id
@@ -70,14 +62,12 @@ async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
         resp.message("⚠️ You've run out of tokens.\nBuy more here:\nhttps://yourdomain.com/pay")
         return str(resp)
 
-    # Списание токена
     cur.execute("UPDATE users SET tokens_balance = tokens_balance - 1 WHERE id = %s", (user_id,))
     cur.execute("""
         INSERT INTO tokens_log (user_id, change, source, description, created_at)
         VALUES (%s, %s, %s, %s, %s)
     """, (user_id, -1, 'chat', f"Message: {Body[:50]}", datetime.utcnow()))
 
-    # OpenAI обработка
     try:
         completion = client.chat.completions.create(
             model="gpt-4",
@@ -95,13 +85,11 @@ async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
     resp.message(gpt_response)
     return str(resp)
 
-# === /twilio-status (callback webhook) ===
 @app.post("/twilio-status")
 async def twilio_status(status_data: dict):
     print("[Twilio STATUS] 📡", status_data)
     return {"status": "received"}
 
-# === /chat (локальный тест) ===
 @app.post("/chat", response_class=PlainTextResponse)
 async def chat(phone_number: str = Form(...), message: str = Form(...)):
     print(f"[TEST CHAT] 📲 {phone_number}: {message}")
