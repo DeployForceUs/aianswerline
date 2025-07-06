@@ -1,14 +1,15 @@
-# Версия 3.8 (2025-07-05)
-# ✅ XML отключён, только текст
-# ✅ Добавлена персональная ссылка на оплату по номеру: /addtokens/{номер}
-# ✅ Подключено по фэншую через include_router
-# ✅ Всё остальное без изменений
+# Версия 3.9 (2025-07-05)
+# ✅ Square Webhook интегрирован в основной FastAPI (main.py)
+# ✅ Nginx маршрутизирует всё через порт 8000
+# ✅ Uvicorn на 8002 отключён как неактуальный
 
 import os
+import json
 import psycopg2
 from datetime import datetime
+from pathlib import Path
 from dotenv import load_dotenv
-from fastapi import FastAPI, Form
+from fastapi import FastAPI, Form, Request
 from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
@@ -16,7 +17,12 @@ from openai import OpenAI
 load_dotenv(dotenv_path="/opt/aianswerline/.env")
 
 app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 # === Подключение /addtokens по фэншую ===
 from addtokens import router as addtokens_router
@@ -92,3 +98,37 @@ async def twilio_status(status_data: dict):
 async def chat(phone_number: str = Form(...), message: str = Form(...)):
     print(f"[TEST CHAT] 📲 {phone_number}: {message}")
     return f"Mock response to your message: {message}"
+
+@app.post("/webhook/square")
+async def square_webhook(request: Request):
+    try:
+        data = await request.json()
+        print("[SQUARE] ✅ Webhook received")
+
+        # 💾 Сохраняем в файл
+        dump_dir = Path("/opt/aianswerline/tmp")
+        dump_dir.mkdir(parents=True, exist_ok=True)
+        dump_path = dump_dir / "square_webhook_dump.json"
+        with open(dump_path, "a") as f:
+            json.dump(data, f, indent=2)
+            f.write("\n")
+
+        # ⚙️ Обработка (если есть метаданные)
+        metadata = data.get("data", {}).get("object", {}).get("payment", {}).get("metadata", {})
+        phone = metadata.get("phone")
+        if phone:
+            cur.execute("SELECT id FROM users WHERE phone_number = %s", (phone,))
+            row = cur.fetchone()
+            if row:
+                user_id = row[0]
+                cur.execute("""
+                    INSERT INTO tokens_log (user_id, change, source, description, created_at)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (user_id, 2, 'square', 'Payment received', datetime.utcnow()))
+                cur.execute("UPDATE users SET tokens_balance = tokens_balance + 2 WHERE id = %s", (user_id,))
+                return {"status": "ok", "message": "tokens added"}
+
+        return {"status": "ok", "message": "webhook received, no phone found"}
+
+    except Exception as e:
+        return {"status": "error", "details": f"webhook error: {str(e)}"}
