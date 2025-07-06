@@ -1,12 +1,12 @@
-# Версия 4.0 (2025-07-05)
-# ✅ Square Webhook интегрирован в основной FastAPI (main.py)
-# ✅ Nginx маршрутизирует всё через порт 8000
-# ✅ Uvicorn на 8002 отключён как неактуальный
-# ✅ Google OAuth вставлен через include_router
+# Версия 5.0 (2025-07-06)
+# ✅ Добавлен asyncpg pool (для async email_otp)
+# ✅ Оставлен psycopg2 для sync SQL
+# ✅ OTP готов к миграции в email_otp
 
 import os
 import json
 import psycopg2
+import asyncpg
 from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
@@ -25,19 +25,17 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# === Подключение /addtokens по фэншую ===
+# === Роутеры ===
 from addtokens import router as addtokens_router
 app.include_router(addtokens_router, prefix="/addtokens")
 
-# === Подключение Google Auth ===
 from google_auth import router as google_auth_router
 app.include_router(google_auth_router)
 
-# === OTP Email ===
 from otp_router import router as otp_router
 app.include_router(otp_router)
 
-# === DB Connect ===
+# === Sync DB (psycopg2) ===
 conn = psycopg2.connect(
     dbname=os.getenv("DB_NAME"),
     user=os.getenv("DB_USER"),
@@ -47,6 +45,19 @@ conn = psycopg2.connect(
 )
 conn.autocommit = True
 cur = conn.cursor()
+
+# === Async DB (asyncpg) ===
+@app.on_event("startup")
+async def startup():
+    app.state.pg_pool = await asyncpg.create_pool(
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASS"),
+        database=os.getenv("DB_NAME"),
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT"),
+        min_size=1,
+        max_size=5
+    )
 
 # === OpenAI ===
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -113,7 +124,6 @@ async def square_webhook(request: Request):
         data = await request.json()
         print("[SQUARE] ✅ Webhook received")
 
-        # 💾 Сохраняем в файл
         dump_dir = Path("/opt/aianswerline/tmp")
         dump_dir.mkdir(parents=True, exist_ok=True)
         dump_path = dump_dir / "square_webhook_dump.json"
