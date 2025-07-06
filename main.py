@@ -139,3 +139,12 @@ async def square_webhook(request: Request):
 
     except Exception as e:
         return {"status": "error", "details": f"webhook error: {str(e)}"}
+
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/", response_class=HTMLResponse)
+async def serve_landing(request: Request):
+    return templates.TemplateResponse("landing.html", {"request": request})

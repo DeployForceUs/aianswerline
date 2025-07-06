@@ -1,0 +1,50 @@
+Jul 05 23:16:59 airline uvicorn[124611]: INFO:     162.158.110.193:0 - "GET /actuator/env HTTP/1.0" 404 Not Found
+Jul 05 23:16:59 airline uvicorn[124611]: INFO:     172.71.250.44:0 - "GET /server HTTP/1.0" 404 Not Found
+Jul 05 23:16:59 airline uvicorn[124611]: INFO:     162.158.110.28:0 - "GET /server HTTP/1.0" 404 Not Found
+Jul 05 23:17:00 airline uvicorn[124611]: INFO:     172.71.144.174:0 - "GET /version HTTP/1.0" 404 Not Found
+Jul 05 23:17:00 airline uvicorn[124611]: INFO:     172.70.251.12:0 - "GET /version HTTP/1.0" 404 Not Found
+Jul 05 23:17:00 airline uvicorn[124611]: INFO:     162.158.86.247:0 - "GET /.vscode/sftp.json HTTP/1.0" 404 Not Found
+Jul 05 23:17:00 airline uvicorn[124611]: INFO:     172.68.194.229:0 - "GET /.vscode/sftp.json HTTP/1.0" 404 Not Found
+Jul 05 23:17:01 airline uvicorn[124611]: INFO:     172.70.240.34:0 - "GET /about HTTP/1.0" 404 Not Found
+Jul 05 23:17:01 airline uvicorn[124611]: INFO:     172.70.246.64:0 - "GET /about HTTP/1.0" 404 Not Found
+Jul 05 23:17:01 airline uvicorn[124611]: INFO:     172.71.164.204:0 - "GET /debug/default/view?panel=config HTTP/1.0" 404 Not Found
+Jul 05 23:17:01 airline uvicorn[124611]: INFO:     172.71.164.171:0 - "GET /debug/default/view?panel=config HTTP/1.0" 404 Not Found
+Jul 05 23:17:01 airline uvicorn[124611]: INFO:     172.71.172.36:0 - "GET /v2/_catalog HTTP/1.0" 404 Not Found
+Jul 05 23:17:01 airline uvicorn[124611]: INFO:     162.158.95.85:0 - "GET /v2/_catalog HTTP/1.0" 404 Not Found
+Jul 05 23:17:02 airline uvicorn[124611]: INFO:     172.69.150.133:0 - "GET /ecp/Current/exporttool/microsoft.exchange.ediscovery.exporttool.application HTTP/1.0" 404 Not Found
+Jul 05 23:17:02 airline uvicorn[124611]: INFO:     172.71.164.15:0 - "GET /ecp/Current/exporttool/microsoft.exchange.ediscovery.exporttool.application HTTP/1.0" 404 Not Found
+Jul 05 23:17:02 airline uvicorn[124611]: INFO:     172.70.242.196:0 - "GET /server-status HTTP/1.0" 404 Not Found
+Jul 05 23:17:02 airline uvicorn[124611]: INFO:     172.71.144.24:0 - "GET /server-status HTTP/1.0" 404 Not Found
+Jul 05 23:17:03 airline uvicorn[124611]: INFO:     172.70.248.21:0 - "GET /login.action HTTP/1.0" 404 Not Found
+Jul 05 23:17:03 airline uvicorn[124611]: INFO:     172.70.248.15:0 - "GET /login.action HTTP/1.0" 404 Not Found
+Jul 05 23:17:03 airline uvicorn[124611]: INFO:     162.158.86.104:0 - "GET /_all_dbs HTTP/1.0" 404 Not Found
+Jul 05 23:17:03 airline uvicorn[124611]: INFO:     172.70.246.74:0 - "GET /_all_dbs HTTP/1.0" 404 Not Found
+Jul 05 23:17:03 airline uvicorn[124611]: INFO:     172.70.240.93:0 - "GET /.DS_Store HTTP/1.0" 404 Not Found
+Jul 05 23:17:04 airline uvicorn[124611]: INFO:     162.158.94.59:0 - "GET /.DS_Store HTTP/1.0" 404 Not Found
+Jul 05 23:17:04 airline uvicorn[124611]: INFO:     162.158.87.60:0 - "GET /.env HTTP/1.0" 404 Not Found
+Jul 05 23:17:04 airline uvicorn[124611]: INFO:     172.70.248.67:0 - "GET /.env HTTP/1.0" 404 Not Found
+Jul 05 23:17:04 airline uvicorn[124611]: INFO:     162.158.86.219:0 - "GET /.git/config HTTP/1.0" 404 Not Found
+Jul 05 23:17:04 airline uvicorn[124611]: INFO:     172.68.194.185:0 - "GET /.git/config HTTP/1.0" 404 Not Found
+Jul 05 23:17:05 airline uvicorn[124611]: INFO:     172.71.148.107:0 - "GET /s/333323e27383e21323e2430313/_/%3B/META-INF/maven/com.atlassian.jira/jira-webapp-dist/pom.properties HTTP/1.0" 404 Not Found
+Jul 05 23:17:05 airline uvicorn[124611]: INFO:     162.158.94.182:0 - "GET /s/630313e2834313e27363e2237313/_/%3B/META-INF/maven/com.atlassian.jira/jira-webapp-dist/pom.properties HTTP/1.0" 404 Not Found
+Jul 05 23:17:05 airline uvicorn[124611]: INFO:     172.71.144.43:0 - "GET /config.json HTTP/1.0" 404 Not Found
+Jul 05 23:17:05 airline uvicorn[124611]: INFO:     162.158.111.33:0 - "GET /config.json HTTP/1.0" 404 Not Found
+Jul 05 23:17:05 airline uvicorn[124611]: INFO:     172.68.195.194:0 - "GET /telescope/requests HTTP/1.0" 404 Not Found
+Jul 05 23:17:05 airline uvicorn[124611]: INFO:     172.70.247.73:0 - "GET /telescope/requests HTTP/1.0" 404 Not Found
+Jul 05 23:17:06 airline uvicorn[124611]: INFO:     172.71.246.124:0 - "GET /info.php HTTP/1.0" 404 Not Found
+Jul 05 23:17:06 airline uvicorn[124611]: INFO:     172.70.248.32:0 - "GET /info.php HTTP/1.0" 404 Not Found
+Jul 05 23:17:06 airline uvicorn[124611]: INFO:     172.71.172.193:0 - "GET /?rest_route=/wp/v2/users/ HTTP/1.0" 404 Not Found
+Jul 05 23:17:06 airline uvicorn[124611]: INFO:     172.68.193.138:0 - "GET /?rest_route=/wp/v2/users/ HTTP/1.0" 404 Not Found
+Jul 05 23:20:58 airline uvicorn[124611]: INFO:     172.68.213.145:0 - "HEAD / HTTP/1.0" 404 Not Found
+Jul 05 23:25:05 airline uvicorn[124611]: INFO:     185.242.226.166:0 - "GET / HTTP/1.0" 404 Not Found
+Jul 05 23:32:03 airline uvicorn[124611]: INFO:     162.142.125.210:0 - "GET /favicon.ico HTTP/1.0" 404 Not Found
+Jul 05 23:41:57 airline uvicorn[124611]: INFO:     172.69.166.122:0 - "GET / HTTP/1.0" 404 Not Found
+Jul 05 23:59:36 airline systemd[1]: Stopping fastapi-gateway.service - FastAPI Gateway Service...
+Jul 05 23:59:36 airline uvicorn[124611]: INFO:     Shutting down
+Jul 05 23:59:36 airline uvicorn[124611]: INFO:     Waiting for application shutdown.
+Jul 05 23:59:36 airline uvicorn[124611]: INFO:     Application shutdown complete.
+Jul 05 23:59:36 airline uvicorn[124611]: INFO:     Finished server process [124611]
+Jul 05 23:59:36 airline systemd[1]: fastapi-gateway.service: Deactivated successfully.
+Jul 05 23:59:36 airline systemd[1]: Stopped fastapi-gateway.service - FastAPI Gateway Service.
+Jul 05 23:59:36 airline systemd[1]: fastapi-gateway.service: Consumed 22.058s CPU time.
+Jul 05 23:59:36 airline systemd[1]: Started fastapi-gateway.service - FastAPI Gateway Service.
