@@ -1,4 +1,4 @@
-<!-- Версия 2.0 (2025-07-06) -->
+<!-- Версия 2.1 (2025-07-06) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,6 +23,7 @@
       color: white;
       border: none;
       border-radius: 6px;
+      cursor: pointer;
     }
     .status {
       margin-top: 10px;
@@ -77,15 +78,29 @@
       }
     });
 
-    function verifyOTP() {
+    async function verifyOTP() {
       const otp = document.getElementById("otp").value.trim();
       const email = emailInput.value.trim();
       const verifyStatus = document.getElementById("verify-status");
 
-      if (otp.length === 6) {
-        verifyStatus.textContent = "✅ Code accepted (placeholder logic)";
-      } else {
-        verifyStatus.textContent = "❌ Invalid code format";
+      const formData = new FormData();
+      formData.append("email", email);
+      formData.append("code", otp);
+
+      try {
+        const res = await fetch("/verify_otp", {
+          method: "POST",
+          body: formData
+        });
+
+        const result = await res.json();
+        if (result.message === "Verified") {
+          verifyStatus.textContent = "🎉 Success! You're verified.";
+        } else {
+          verifyStatus.textContent = "❌ Invalid code.";
+        }
+      } catch (err) {
+        verifyStatus.textContent = "❌ Error verifying code.";
       }
     }
   </script>
