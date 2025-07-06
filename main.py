@@ -1,7 +1,8 @@
-# Версия 3.9 (2025-07-05)
+# Версия 4.0 (2025-07-05)
 # ✅ Square Webhook интегрирован в основной FastAPI (main.py)
 # ✅ Nginx маршрутизирует всё через порт 8000
 # ✅ Uvicorn на 8002 отключён как неактуальный
+# ✅ Google OAuth вставлен через include_router
 
 import os
 import json
@@ -28,6 +29,14 @@ app.add_middleware(
 from addtokens import router as addtokens_router
 app.include_router(addtokens_router, prefix="/addtokens")
 
+# === Подключение Google Auth ===
+from google_auth import router as google_auth_router
+app.include_router(google_auth_router)
+
+# === OTP Email ===
+from otp_router import router as otp_router
+app.include_router(otp_router)
+
 # === DB Connect ===
 conn = psycopg2.connect(
     dbname=os.getenv("DB_NAME"),
@@ -45,7 +54,6 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 @app.post("/twilio-hook", response_class=PlainTextResponse)
 async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
     print(f"[Twilio SMS] 📩 From {From}: {Body}")
-
     cur.execute("SELECT id, tokens_balance FROM users WHERE phone_number = %s", (From,))
     row = cur.fetchone()
 
@@ -113,7 +121,6 @@ async def square_webhook(request: Request):
             json.dump(data, f, indent=2)
             f.write("\n")
 
-        # ⚙️ Обработка (если есть метаданные)
         metadata = data.get("data", {}).get("object", {}).get("payment", {}).get("metadata", {})
         phone = metadata.get("phone")
         if phone:

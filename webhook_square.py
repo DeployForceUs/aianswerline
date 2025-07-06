@@ -1,9 +1,10 @@
-# Версия 1.1.0 (2025-07-05)
-# Webhook Square -> проверка и запись в Postgres
+# Версия 1.1.3 (2025-07-05)
+# Webhook Square -> проверка, запись в Postgres + лог в файл
 
 from fastapi import FastAPI, Request
 import asyncpg
 import os
+import json
 from dotenv import load_dotenv
 
 load_dotenv("/opt/aianswerline/.env")
@@ -20,6 +21,12 @@ app = FastAPI()
 async def webhook_square(request: Request):
     try:
         payload = await request.json()
+
+        # 🪵 Запись в файл
+        os.makedirs("/opt/aianswerline/tmp", exist_ok=True)
+        with open("/opt/aianswerline/tmp/square_webhook_dump.json", "w") as f:
+            json.dump(payload, f, indent=2)
+
         phone = payload["data"]["object"]["payment"]["metadata"].get("phone")
 
         if not phone:
