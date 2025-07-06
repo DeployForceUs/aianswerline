@@ -1,19 +1,17 @@
-# Версия 3.0 (2025-07-06)
-# 📩 OTP: Отправка и проверка кода через PostgreSQL
+# Версия 2.1.1 (2025-07-06)
+# 📩 OTP: PostgreSQL + Used Check JSON Response
 
-from fastapi import APIRouter, Form, HTTPException
+from fastapi import APIRouter, Form
 from fastapi.responses import JSONResponse
 from datetime import datetime, timedelta
 import random
 import string
-import os
 import psycopg2
-
-from send_email import send_email
+import os
 
 router = APIRouter()
 
-# Подключение к PostgreSQL
+# DB Connect
 conn = psycopg2.connect(
     dbname=os.getenv("DB_NAME"),
     user=os.getenv("DB_USER"),
@@ -24,6 +22,8 @@ conn = psycopg2.connect(
 conn.autocommit = True
 cur = conn.cursor()
 
+from send_email import send_email
+
 def generate_otp(length=6):
     return ''.join(random.choices(string.digits, k=length))
 
@@ -32,18 +32,16 @@ async def send_otp_email(email: str = Form(...)):
     code = generate_otp()
     expires_at = datetime.utcnow() + timedelta(minutes=10)
 
-    # Запись кода в таблицу
     cur.execute("""
         INSERT INTO email_otp (email, code, expires_at)
         VALUES (%s, %s, %s)
     """, (email, code, expires_at))
 
-    # Отправка письма
     html = f"<p>Your login code:</p><h2 style='font-family: monospace; letter-spacing: 4px'>{code}</h2><p>This code will expire in 10 minutes.</p>"
     status, text = send_email(email, "Your OTP Code", html)
 
     if status != 200:
-        raise HTTPException(status_code=500, detail="Failed to send email")
+        return JSONResponse(status_code=500, content={"error": "Failed to send email"})
 
     return JSONResponse(content={"message": "OTP sent"})
 
@@ -52,22 +50,20 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
     cur.execute("""
         SELECT id, expires_at, used FROM email_otp
         WHERE email = %s AND code = %s
-        ORDER BY id DESC
-        LIMIT 1
+        ORDER BY id DESC LIMIT 1
     """, (email, code))
     row = cur.fetchone()
 
     if not row:
-        raise HTTPException(status_code=400, detail="Invalid code")
+        return JSONResponse(status_code=400, content={"error": "Invalid code"})
 
     otp_id, expires_at, used = row
 
     if used:
-        raise HTTPException(status_code=400, detail="Code already used")
+        return JSONResponse(status_code=400, content={"error": "Code already used"})
 
     if datetime.utcnow() > expires_at:
-        raise HTTPException(status_code=400, detail="Code expired")
+        return JSONResponse(status_code=400, content={"error": "Code expired"})
 
-    # Обновляем как использованный
     cur.execute("UPDATE email_otp SET used = TRUE WHERE id = %s", (otp_id,))
     return JSONResponse(content={"message": "Verified"})
