@@ -1,0 +1,110 @@
+.
+├── add_log.py
+├── addtokens.py
+├── app_tokens.bak
+├── app_tokens_legacy.py
+├── auth_google.py
+├── bind_test_20250706_222413.log
+├── CHANGELOG.md
+├── commitlog.sh
+├── debug_test.py
+├── diag_log.txt
+├── google_auth.py
+├── index.html
+├── initial_test2.py
+├── initial_test3.py
+├── initial_test.py
+├── init_insert_users_tokens_log.sql
+├── init_schema.sql
+├── main.py
+├── master
+├── msft_test_push.txt
+├── of -i :8000
+├── optin.html
+├── otp_router.py
+├── otp_test_pg.sh
+├── otp_test.sh
+├── pay.html
+├── paymentlink.py
+├── payment_router.py
+├── privacy.html
+├── PROJECT_STATUS.md
+├── project_structure.txt
+├── __pycache__
+│   ├── addtokens.cpython-311.pyc
+│   ├── addtokens.cpython-312.pyc
+│   ├── app_tokens.cpython-312.pyc
+│   ├── google_auth.cpython-312.pyc
+│   ├── main.cpython-312.pyc
+│   ├── otp_router.cpython-312.pyc
+│   ├── paymentlink.cpython-311.pyc
+│   ├── payment_router.cpython-312.pyc
+│   ├── send_email.cpython-312.pyc
+│   ├── square_webhook.cpython-311.pyc
+│   ├── square_webhook_pg.cpython-311.pyc
+│   ├── token_up.cpython-312.pyc
+│   └── webhook_square.cpython-311.pyc
+├── requirements.txt
+├── send_email.py
+├── square_webhook_pg.py
+├── static
+├── templates
+│   ├── add_tokens.html
+│   └── index.html
+├── terms.html
+├── test_bind_phone.py
+├── test_email.py
+├── test_otp_email_flow.py
+├── test_push_1750105031.txt
+├── test_resend_api.py
+├── test_send_email.py
+├── tmp
+│   ├── email_flow_20250707_030914.log
+│   ├── email_flow_20250707_031117.log
+│   ├── email_flow_20250707_031238.log
+│   ├── email_flow_20250707_031245.log
+│   ├── email_flow_20250707_031558.log
+│   ├── resend_debug.log
+│   └── square_webhook_dump.json
+├── token_up.py
+├── venv
+│   ├── bin
+│   │   ├── activate
+│   │   ├── activate.csh
+│   │   ├── activate.fish
+│   │   ├── Activate.ps1
+│   │   ├── distro
+│   │   ├── dotenv
+│   │   ├── fastapi
+│   │   ├── flask
+│   │   ├── google-oauthlib-tool
+│   │   ├── gunicorn
+│   │   ├── httpx
+│   │   ├── normalizer
+│   │   ├── openai
+│   │   ├── pip
+│   │   ├── pip3
+│   │   ├── pip3.12
+│   │   ├── pyrsa-decrypt
+│   │   ├── pyrsa-encrypt
+│   │   ├── pyrsa-keygen
+│   │   ├── pyrsa-priv2pub
+│   │   ├── pyrsa-sign
+│   │   ├── pyrsa-verify
+│   │   ├── python -> python3
+│   │   ├── python3 -> /usr/bin/python3
+│   │   ├── python3.12 -> python3
+│   │   ├── tqdm
+│   │   └── uvicorn
+│   ├── include
+│   │   └── python3.12
+│   ├── lib
+│   │   └── python3.12
+│   ├── lib64 -> lib
+│   └── pyvenv.cfg
+├── webhook_square.py
+├── wsgi.py
+├── ystemctl restart fastapi-gateway.service
+└── z_archive_square_webhook_legacy.py
+
+12 directories, 96 files

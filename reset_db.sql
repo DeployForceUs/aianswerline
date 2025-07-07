@@ -1,0 +1,31 @@
+-- Версия 3.0 (2025-07-07)
+DROP TABLE IF EXISTS user_profiles CASCADE;
+DROP TABLE IF EXISTS otp_attempts CASCADE;
+DROP TABLE IF EXISTS email_otp CASCADE;
+DROP TABLE IF EXISTS tokens_log CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    phone TEXT UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE email_otp (
+    id SERIAL PRIMARY KEY,
+    email TEXT NOT NULL,
+    code TEXT NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    attempts INTEGER DEFAULT 0
+);
+
+CREATE TABLE tokens_log (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    change INTEGER NOT NULL,
+    source TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
