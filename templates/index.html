@@ -1,0 +1,122 @@
+<!-- Версия 2.4 (2025-07-06) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login via OTP</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: 30px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    input, button {
+      padding: 10px;
+      width: 100%;
+      font-size: 1rem;
+      margin-top: 10px;
+    }
+    button {
+      background-color: #0066ff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .status {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2>🔐 Enter your email</h2>
+  <form id="otp-form">
+    <input type="email" name="email" id="email" placeholder="you@example.com" required>
+    <button type="submit">Send OTP</button>
+    <div class="status" id="status"></div>
+  </form>
+
+  <div id="otp-step" style="display:none">
+    <h2>📮 Enter OTP Code</h2>
+    <input type="text" id="otp" name="otp" inputmode="numeric" pattern="[0-9]*" placeholder="123456" autocomplete="one-time-code" required>
+    <button type="button" onclick="verifyOTP()">Verify</button>
+    <div class="status" id="verify-status"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById("otp-form");
+    const statusDiv = document.getElementById("status");
+    const otpStep = document.getElementById("otp-step");
+    const emailInput = document.getElementById("email");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim();
+      statusDiv.textContent = "📡 Sending...";
+
+      const formData = new FormData();
+      formData.append("email", email);
+
+      try {
+        const res = await fetch("/send_otp_email", {
+          method: "POST",
+          body: formData
+        });
+
+        const result = await res.json();
+        if (result.message === "OTP sent") {
+          statusDiv.textContent = "✅ Code sent. Check your email!";
+          otpStep.style.display = "block";
+        } else if (result.detail) {
+          statusDiv.textContent = `❌ ${result.detail}`;
+        } else {
+          statusDiv.textContent = "❌ Failed to send code.";
+        }
+      } catch (err) {
+        statusDiv.textContent = "❌ Error contacting server.";
+      }
+    });
+
+    async function verifyOTP() {
+      const otp = document.getElementById("otp").value.trim();
+      const email = emailInput.value.trim();
+      const verifyStatus = document.getElementById("verify-status");
+
+      const formData = new FormData();
+      formData.append("email", email);
+      formData.append("code", otp);
+
+      try {
+        const res = await fetch("/verify_otp", {
+          method: "POST",
+          body: formData
+        });
+
+        const result = await res.json();
+
+        if (result.message === "Verified") {
+          verifyStatus.textContent = "🎉 Success! You're verified.";
+        } else if (result.detail === "Code expired") {
+          verifyStatus.textContent = "⌛ Code expired.";
+        } else if (result.detail === "Code already used") {
+          verifyStatus.textContent = "📭 Code already used.";
+        } else if (result.detail === "Too many attempts") {
+          verifyStatus.textContent = "🚫 Too many attempts.";
+        } else if (result.detail === "Invalid code") {
+          verifyStatus.textContent = "❌ Invalid code.";
+        } else if (result.detail) {
+          verifyStatus.textContent = `❌ ${result.detail}`;
+        } else {
+          verifyStatus.textContent = "❌ Unknown error.";
+        }
+
+      } catch (err) {
+        verifyStatus.textContent = "❌ Error verifying code.";
+      }
+    }
+  </script>
+</body>
+</html>

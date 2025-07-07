@@ -1,5 +1,5 @@
-# Версия 2.2 (2025-07-06)
-# 📩 OTP: Ограничение попыток, PostgreSQL, улучшенные ошибки
+# Версия 2.4 (2025-07-06)
+# 📩 OTP: PostgreSQL, лимит попыток, истечение срока, корректные ошибки
 
 from fastapi import APIRouter, Form, HTTPException
 from fastapi.responses import JSONResponse
@@ -46,10 +46,13 @@ async def send_otp_email(email: str = Form(...)):
 
 @router.post("/verify_otp")
 async def verify_otp(email: str = Form(...), code: str = Form(...)):
+    # Ищем самый последний неиспользованный код
     cur.execute("""
-        SELECT id, code, expires_at, used, attempts FROM email_otp
+        SELECT id, code, expires_at, used, attempts
+        FROM email_otp
         WHERE email = %s
-        ORDER BY id DESC LIMIT 1
+        ORDER BY id DESC
+        LIMIT 1
     """, (email,))
     row = cur.fetchone()
 
@@ -57,11 +60,13 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
         raise HTTPException(status_code=400, detail="Code not found")
 
     otp_id, db_code, expires_at, used, attempts = row
+    now = datetime.utcnow()
 
+    # Логика проверки
     if used:
         raise HTTPException(status_code=400, detail="Code already used")
 
-    if datetime.utcnow() > expires_at:
+    if now > expires_at:
         raise HTTPException(status_code=400, detail="Code expired")
 
     if attempts >= 5:
@@ -71,5 +76,6 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
         cur.execute("UPDATE email_otp SET attempts = attempts + 1 WHERE id = %s", (otp_id,))
         raise HTTPException(status_code=400, detail="Invalid code")
 
+    # Всё ок
     cur.execute("UPDATE email_otp SET used = TRUE WHERE id = %s", (otp_id,))
     return JSONResponse(content={"message": "Verified"})
