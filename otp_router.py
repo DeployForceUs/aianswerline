@@ -1,5 +1,5 @@
-# Версия 2.4 (2025-07-06)
-# 📩 OTP: PostgreSQL, лимит попыток, истечение срока, корректные ошибки
+# Версия 2.5.1 (2025-07-06)
+# 📩 OTP: PostgreSQL, лимит попыток, истечение срока, корректные ошибки, привязка телефона (одноразовая)
 
 from fastapi import APIRouter, Form, HTTPException
 from fastapi.responses import JSONResponse
@@ -46,7 +46,6 @@ async def send_otp_email(email: str = Form(...)):
 
 @router.post("/verify_otp")
 async def verify_otp(email: str = Form(...), code: str = Form(...)):
-    # Ищем самый последний неиспользованный код
     cur.execute("""
         SELECT id, code, expires_at, used, attempts
         FROM email_otp
@@ -62,7 +61,6 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
     otp_id, db_code, expires_at, used, attempts = row
     now = datetime.utcnow()
 
-    # Логика проверки
     if used:
         raise HTTPException(status_code=400, detail="Code already used")
 
@@ -76,6 +74,28 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
         cur.execute("UPDATE email_otp SET attempts = attempts + 1 WHERE id = %s", (otp_id,))
         raise HTTPException(status_code=400, detail="Invalid code")
 
-    # Всё ок
     cur.execute("UPDATE email_otp SET used = TRUE WHERE id = %s", (otp_id,))
     return JSONResponse(content={"message": "Verified"})
+
+@router.post("/bind_phone")
+async def bind_phone(email: str = Form(...), phone: str = Form(...)):
+    # Проверка: привязан ли уже телефон к email
+    cur.execute("SELECT phone FROM user_profiles WHERE email = %s", (email,))
+    existing = cur.fetchone()
+
+    if existing:
+        return JSONResponse(content={
+            "message": "Phone already linked",
+            "phone": existing[0]
+        })
+
+    # Привязка
+    cur.execute("""
+        INSERT INTO user_profiles (email, phone)
+        VALUES (%s, %s)
+    """, (email, phone))
+
+    return JSONResponse(content={
+        "message": "Phone linked successfully",
+        "balance": 0
+    })
