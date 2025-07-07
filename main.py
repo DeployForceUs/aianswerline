@@ -1,7 +1,5 @@
-# Версия 5.0 (2025-07-06)
-# ✅ Добавлен asyncpg pool (для async email_otp)
-# ✅ Оставлен psycopg2 для sync SQL
-# ✅ OTP готов к миграции в email_otp
+# Версия 5.1 (2025-07-07)
+# ✅ Убран префикс /addtokens → /create_payment_link теперь доступен напрямую
 
 import os
 import json
@@ -27,7 +25,7 @@ app.add_middleware(
 
 # === Роутеры ===
 from addtokens import router as addtokens_router
-app.include_router(addtokens_router, prefix="/addtokens")
+app.include_router(addtokens_router)  # убрали префикс /addtokens
 
 from google_auth import router as google_auth_router
 app.include_router(google_auth_router)
@@ -157,4 +155,4 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_landing(request: Request):
-    return templates.TemplateResponse("landing.html", {"request": request})
+    return templates.TemplateResponse("index.html", {"request": request})

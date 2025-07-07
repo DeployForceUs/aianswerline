@@ -1,115 +1,128 @@
-# Версия 2.6 (2025-07-07)
-# ✅ verify_otp теперь возвращает linked и phone (если есть), вместо запроса /check_phone_linked
-# ✅ Удалена необходимость лишнего запроса после верификации
+# Версия 3.2 (2025-07-07)
+# ✅ Полная логика: send_otp_email, verify_otp, bind_phone
+# ✅ Используется только таблица users
+# ✅ email_otp — справочная таблица
+# ✅ При создании юзера: 0 токенов и запись времени
 
-from fastapi import APIRouter, Form, HTTPException
+from fastapi import APIRouter, Form
 from fastapi.responses import JSONResponse
-from datetime import datetime, timedelta
-import random
-import string
 import psycopg2
 import os
+from datetime import datetime, timedelta
+from send_email import send_email  # 📤 импорт функции отправки письма
 
 router = APIRouter()
 
-conn = psycopg2.connect(
-    dbname=os.getenv("DB_NAME"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASS"),
-    host=os.getenv("DB_HOST"),
-    port=os.getenv("DB_PORT")
-)
-conn.autocommit = True
-cur = conn.cursor()
+DB_CONFIG = {
+    "host": os.getenv("DB_HOST"),
+    "port": os.getenv("DB_PORT"),
+    "dbname": os.getenv("DB_NAME"),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASS")
+}
 
-from send_email import send_email
-
-def generate_otp(length=6):
-    return ''.join(random.choices(string.digits, k=length))
+def get_db_conn():
+    return psycopg2.connect(**DB_CONFIG)
 
 @router.post("/send_otp_email")
 async def send_otp_email(email: str = Form(...)):
-    code = generate_otp()
-    expires = datetime.utcnow() + timedelta(minutes=10)
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
 
-    cur.execute("""
-        INSERT INTO email_otp (email, code, expires_at)
-        VALUES (%s, %s, %s)
-    """, (email, code, expires))
+        code = str(int(datetime.utcnow().timestamp()))[-6:]  # псевдо-OTP
+        now = datetime.utcnow()
+        expires = now + timedelta(minutes=5)
 
-    html = f"<p>Your login code:</p><h2 style='font-family: monospace; letter-spacing: 4px'>{code}</h2><p>This code will expire in 10 minutes.</p>"
-    status, text = send_email(email, "Your OTP Code", html)
+        cur.execute("""
+            INSERT INTO email_otp (email, code, expires_at, used, attempts, sent_at)
+            VALUES (%s, %s, %s, FALSE, 0, %s)
+        """, (email, code, expires, now))
+        conn.commit()
 
-    if status != 200:
-        raise HTTPException(status_code=500, detail="Failed to send email")
+        subject = "Your AI AnswerLine OTP Code"
+        html_body = f"<h3>Your code:</h3><p><b>{code}</b></p><p>Expires in 5 minutes.</p>"
 
-    return JSONResponse(content={"message": "OTP sent"})
+        status_code, response = send_email(email, subject, html_body)
+        if status_code not in (200, 202):
+            return JSONResponse(status_code=500, content={"detail": f"Email send failed: {response}"})
+
+        return JSONResponse(content={"message": "OTP sent"})
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": str(e)})
+
+    finally:
+        if conn:
+            conn.close()
+
 
 @router.post("/verify_otp")
 async def verify_otp(email: str = Form(...), code: str = Form(...)):
-    cur.execute("""
-        SELECT id, code, expires_at, used, attempts
-        FROM email_otp
-        WHERE email = %s
-        ORDER BY id DESC
-        LIMIT 1
-    """, (email,))
-    row = cur.fetchone()
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
 
-    if not row:
-        raise HTTPException(status_code=400, detail="Code not found")
+        cur.execute("SELECT code, expires_at, used FROM email_otp WHERE email = %s ORDER BY id DESC LIMIT 1", (email,))
+        row = cur.fetchone()
+        if not row:
+            return JSONResponse(status_code=400, content={"detail": "Email not found."})
 
-    otp_id, db_code, expires_at, used, attempts = row
-    now = datetime.utcnow()
+        db_code, expires, used = row
+        if used:
+            return JSONResponse(status_code=400, content={"detail": "Code already used."})
+        if db_code != code:
+            return JSONResponse(status_code=400, content={"detail": "Invalid code."})
+        if datetime.utcnow() > expires:
+            return JSONResponse(status_code=400, content={"detail": "Code expired."})
 
-    if used:
-        raise HTTPException(status_code=400, detail="Code already used")
+        # помечаем код использованным
+        cur.execute("UPDATE email_otp SET used = TRUE WHERE email = %s AND code = %s", (email, code))
 
-    if now > expires_at:
-        raise HTTPException(status_code=400, detail="Code expired")
+        # проверка юзера
+        cur.execute("SELECT id, phone FROM users WHERE email = %s", (email,))
+        user = cur.fetchone()
 
-    if attempts >= 5:
-        raise HTTPException(status_code=400, detail="Too many attempts")
+        if not user:
+            cur.execute("""
+                INSERT INTO users (email, tokens_balance, created_at)
+                VALUES (%s, %s, %s)
+            """, (email, 0, datetime.utcnow()))
+            conn.commit()
+            linked = False
+            phone = None
+        else:
+            _, phone = user
+            linked = phone is not None
 
-    if code != db_code:
-        cur.execute("UPDATE email_otp SET attempts = attempts + 1 WHERE id = %s", (otp_id,))
-        raise HTTPException(status_code=400, detail="Invalid code")
-
-    cur.execute("UPDATE email_otp SET used = TRUE WHERE id = %s", (otp_id,))
-
-    # 🔍 Проверка привязки телефона
-    cur.execute("SELECT phone FROM user_profiles WHERE email = %s", (email,))
-    phone_row = cur.fetchone()
-
-    if phone_row:
         return JSONResponse(content={
             "message": "Verified",
-            "linked": True,
-            "phone": phone_row[0]
+            "linked": linked,
+            "phone": phone
         })
-    else:
-        return JSONResponse(content={
-            "message": "Verified",
-            "linked": False
-        })
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": str(e)})
+
+    finally:
+        if conn:
+            conn.close()
+
 
 @router.post("/bind_phone")
 async def bind_phone(email: str = Form(...), phone: str = Form(...)):
-    cur.execute("SELECT phone FROM user_profiles WHERE email = %s", (email,))
-    existing = cur.fetchone()
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
 
-    if existing:
-        return JSONResponse(content={
-            "message": "Phone already linked",
-            "phone": existing[0]
-        })
+        cur.execute("UPDATE users SET phone = %s WHERE email = %s", (phone, email))
+        conn.commit()
 
-    cur.execute("""
-        INSERT INTO user_profiles (email, phone)
-        VALUES (%s, %s)
-    """, (email, phone))
+        return JSONResponse(content={"message": "Phone linked successfully"})
 
-    return JSONResponse(content={
-        "message": "Phone linked successfully",
-        "balance": 0
-    })
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": str(e)})
+
+    finally:
+        if conn:
+            conn.close()

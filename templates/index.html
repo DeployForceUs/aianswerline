@@ -1,35 +1,15 @@
 <!-- Версия 2.9 (2025-07-07) -->
-<!-- ✅ Добавлена кнопка оплаты сразу после привязки телефона -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Login via OTP</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 500px;
-      margin: 30px auto;
-      padding: 20px;
-      line-height: 1.6;
-    }
-    input, button {
-      padding: 10px;
-      width: 100%;
-      font-size: 1rem;
-      margin-top: 10px;
-    }
-    button {
-      background-color: #0066ff;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .status {
-      margin-top: 10px;
-      font-weight: bold;
-    }
+    body { font-family: Arial, sans-serif; max-width: 500px; margin: 30px auto; padding: 20px; line-height: 1.6; }
+    input, button { padding: 10px; width: 100%; font-size: 1rem; margin-top: 10px; }
+    button { background-color: #0066ff; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    .status { margin-top: 10px; font-weight: bold; }
+    .pay-options { margin-top: 30px; }
   </style>
 </head>
 <body>
@@ -48,7 +28,7 @@
   </div>
 
   <div id="phone-step" style="display:none; margin-top: 20px;">
-    <!-- Will be filled dynamically -->
+    <!-- Filled dynamically -->
   </div>
 
   <script>
@@ -61,16 +41,11 @@
       e.preventDefault();
       const email = emailInput.value.trim();
       statusDiv.textContent = "📡 Sending...";
-
       const formData = new FormData();
       formData.append("email", email);
 
       try {
-        const res = await fetch("/send_otp_email", {
-          method: "POST",
-          body: formData
-        });
-
+        const res = await fetch("/send_otp_email", { method: "POST", body: formData });
         const result = await res.json();
         if (result.message === "OTP sent") {
           statusDiv.textContent = "✅ Code sent. Check your email!";
@@ -78,8 +53,8 @@
         } else {
           statusDiv.textContent = "❌ Failed to send code.";
         }
-      } catch (err) {
-        statusDiv.textContent = "❌ Error contacting server.";
+      } catch {
+        statusDiv.textContent = "❌ Server error.";
       }
     });
 
@@ -94,32 +69,32 @@
       formData.append("code", otp);
 
       try {
-        const res = await fetch("/verify_otp", {
-          method: "POST",
-          body: formData
-        });
-
+        const res = await fetch("/verify_otp", { method: "POST", body: formData });
         const result = await res.json();
 
         if (result.message === "Verified") {
-          verifyStatus.textContent = "🎉 Success! You're verified.";
+          verifyStatus.textContent = "🎉 Verified.";
 
           if (result.linked) {
-            const phoneClean = result.phone.replace('+', '');
+            const phone = result.phone;
+            const clean = phone.replace('+', '');
             phoneStep.innerHTML = `
               <h2>💳 Balance: 0 tokens</h2>
               <p>Email: ${email}</p>
-              <p>Phone: ${result.phone}</p>
-              <a href="/addtokens/${phoneClean}">
-                <button>💰 Add Tokens</button>
-              </a>
+              <p>Phone: ${phone}</p>
+              <div class="pay-options">
+                <button onclick="pay(100, '${clean}')">$1 → 20 tokens</button>
+                <button onclick="pay(1000, '${clean}')">$10 → 200 tokens</button>
+                <button onclick="pay(2000, '${clean}')">$20 → 400 tokens</button>
+                <button onclick="pay(3000, '${clean}')">$30 → 600 tokens</button>
+              </div>
             `;
           } else {
             phoneStep.innerHTML = `
-              <h2>📱 Enter your phone number</h2>
-              <label style="display: flex; align-items: center;">
-                <span style="font-weight: bold; padding: 0 5px;">+1</span>
-                <input type="text" id="phone" name="phone" pattern="[0-9]{10}" maxlength="10" placeholder="Your 10-digit number" required style="flex: 1;">
+              <h2>📱 Enter phone number</h2>
+              <label style="display:flex; align-items:center;">
+                <span style="font-weight:bold; padding:0 5px;">+1</span>
+                <input type="text" id="phone" pattern="[0-9]{10}" maxlength="10" required style="flex:1;">
               </label>
               <button type="button" onclick="submitPhone()">Submit Phone</button>
               <div class="status" id="phone-status"></div>
@@ -127,58 +102,42 @@
           }
 
           phoneStep.style.display = "block";
-        } else if (result.detail === "Code expired") {
-          verifyStatus.textContent = "⌛ Code expired.";
-        } else if (result.detail === "Code already used") {
-          verifyStatus.textContent = "📭 Code already used.";
-        } else if (result.detail === "Too many attempts") {
-          verifyStatus.textContent = "🚫 Too many attempts.";
         } else {
-          verifyStatus.textContent = "❌ Invalid code.";
+          verifyStatus.textContent = result.detail || "❌ Verification failed.";
         }
-
-      } catch (err) {
-        verifyStatus.textContent = "❌ Error verifying code.";
+      } catch {
+        verifyStatus.textContent = "❌ Error verifying.";
       }
     }
 
     async function submitPhone() {
-      const phoneInput = document.getElementById("phone").value.trim();
+      const phone = document.getElementById("phone").value.trim();
       const phoneStatus = document.getElementById("phone-status");
       const email = emailInput.value.trim();
-
-      if (!/^\d{10}$/.test(phoneInput)) {
-        phoneStatus.textContent = "❌ Please enter a valid 10-digit number.";
+      if (!/^\d{10}$/.test(phone)) {
+        phoneStatus.textContent = "❌ Invalid 10-digit number.";
         return;
       }
 
-      const fullPhone = "+1" + phoneInput;
-
       const formData = new FormData();
       formData.append("email", email);
-      formData.append("phone", fullPhone);
+      formData.append("phone", "+1" + phone);
 
       try {
-        const res = await fetch("/bind_phone", {
-          method: "POST",
-          body: formData
-        });
-
+        const res = await fetch("/bind_phone", { method: "POST", body: formData });
         const result = await res.json();
-        if (result.message === "Phone linked successfully") {
-          const phoneClean = fullPhone.replace('+', '');
-          phoneStatus.innerHTML = `
-            ✅ Phone successfully linked. Balance: 0 tokens.<br>
-            <a href="/addtokens/${phoneClean}">
-              <button style="margin-top:10px">💰 Add Tokens</button>
-            </a>
-          `;
+        if (result.message.includes("success")) {
+          phoneStatus.textContent = "✅ Phone linked.";
         } else {
-          phoneStatus.textContent = "❌ Failed to bind phone.";
+          phoneStatus.textContent = "❌ Failed to bind.";
         }
-      } catch (err) {
+      } catch {
         phoneStatus.textContent = "❌ Server error.";
       }
+    }
+
+    function pay(amount, phone) {
+      window.location.href = `/create_payment_link?amount=${amount}&phone=${phone}`;
     }
   </script>
 </body>
