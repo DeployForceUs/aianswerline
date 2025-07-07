@@ -1,4 +1,5 @@
-# Версия 3.2 (2025-07-07)
+# Версия 3.3 (2025-07-07)
+# ✅ bind_phone теперь возвращает полный профиль: email, phone, tokens
 # ✅ Полная логика: send_otp_email, verify_otp, bind_phone
 # ✅ Используется только таблица users
 # ✅ email_otp — справочная таблица
@@ -56,7 +57,6 @@ async def send_otp_email(email: str = Form(...)):
         if conn:
             conn.close()
 
-
 @router.post("/verify_otp")
 async def verify_otp(email: str = Form(...), code: str = Form(...)):
     try:
@@ -76,11 +76,9 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
         if datetime.utcnow() > expires:
             return JSONResponse(status_code=400, content={"detail": "Code expired."})
 
-        # помечаем код использованным
         cur.execute("UPDATE email_otp SET used = TRUE WHERE email = %s AND code = %s", (email, code))
 
-        # проверка юзера
-        cur.execute("SELECT id, phone FROM users WHERE email = %s", (email,))
+        cur.execute("SELECT id, phone, tokens_balance FROM users WHERE email = %s", (email,))
         user = cur.fetchone()
 
         if not user:
@@ -91,14 +89,17 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
             conn.commit()
             linked = False
             phone = None
+            tokens = 0
         else:
-            _, phone = user
+            _, phone, tokens = user
             linked = phone is not None
 
         return JSONResponse(content={
             "message": "Verified",
             "linked": linked,
-            "phone": phone
+            "phone": phone,
+            "email": email,
+            "tokens": tokens
         })
 
     except Exception as e:
@@ -107,7 +108,6 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
     finally:
         if conn:
             conn.close()
-
 
 @router.post("/bind_phone")
 async def bind_phone(email: str = Form(...), phone: str = Form(...)):
@@ -118,7 +118,17 @@ async def bind_phone(email: str = Form(...), phone: str = Form(...)):
         cur.execute("UPDATE users SET phone = %s WHERE email = %s", (phone, email))
         conn.commit()
 
-        return JSONResponse(content={"message": "Phone linked successfully"})
+        cur.execute("SELECT tokens_balance FROM users WHERE email = %s", (email,))
+        row = cur.fetchone()
+        tokens = row[0] if row else 0
+
+        return JSONResponse(content={
+            "message": "Verified",
+            "linked": True,
+            "phone": phone,
+            "email": email,
+            "tokens": tokens
+        })
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"detail": str(e)})

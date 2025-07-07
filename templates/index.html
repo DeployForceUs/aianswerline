@@ -1,143 +1,131 @@
-<!-- Версия 2.9 (2025-07-07) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Login via OTP</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI AnswerLine</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 500px; margin: 30px auto; padding: 20px; line-height: 1.6; }
-    input, button { padding: 10px; width: 100%; font-size: 1rem; margin-top: 10px; }
-    button { background-color: #0066ff; color: white; border: none; border-radius: 6px; cursor: pointer; }
-    .status { margin-top: 10px; font-weight: bold; }
-    .pay-options { margin-top: 30px; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+    }
+    input, button {
+      padding: 10px;
+      margin-top: 10px;
+      width: 100%;
+      font-size: 16px;
+    }
+    #otp-form, #phone-form, #dashboard {
+      margin-top: 20px;
+    }
+    button {
+      background: #007BFF;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
   <h2>🔐 Enter your email</h2>
-  <form id="otp-form">
-    <input type="email" name="email" id="email" placeholder="you@example.com" required>
-    <button type="submit">Send OTP</button>
-    <div class="status" id="status"></div>
-  </form>
+  <input type="email" id="email-input" placeholder="your@email.com" />
+  <button onclick="sendOtp()">Send OTP</button>
 
-  <div id="otp-step" style="display:none">
-    <h2>📮 Enter OTP Code</h2>
-    <input type="text" id="otp" name="otp" inputmode="numeric" pattern="[0-9]*" placeholder="123456" autocomplete="one-time-code" required>
-    <button type="button" onclick="verifyOTP()">Verify</button>
-    <div class="status" id="verify-status"></div>
+  <div id="otp-form" class="hidden">
+    <h3>📮 Enter OTP Code</h3>
+    <input type="text" id="otp-code" placeholder="6-digit code" />
+    <button onclick="verifyOtp()">Verify</button>
   </div>
 
-  <div id="phone-step" style="display:none; margin-top: 20px;">
-    <!-- Filled dynamically -->
+  <div id="phone-form" class="hidden">
+    <h3>📱 Enter your phone</h3>
+    <input type="tel" id="phone-input" placeholder="+1..." />
+    <button onclick="bindPhone()">Link Phone</button>
   </div>
+
+  <div id="dashboard" class="hidden"></div>
 
   <script>
-    const form = document.getElementById("otp-form");
-    const statusDiv = document.getElementById("status");
-    const otpStep = document.getElementById("otp-step");
-    const emailInput = document.getElementById("email");
+    let currentEmail = "";
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = emailInput.value.trim();
-      statusDiv.textContent = "📡 Sending...";
-      const formData = new FormData();
-      formData.append("email", email);
-
-      try {
-        const res = await fetch("/send_otp_email", { method: "POST", body: formData });
-        const result = await res.json();
-        if (result.message === "OTP sent") {
-          statusDiv.textContent = "✅ Code sent. Check your email!";
-          otpStep.style.display = "block";
-        } else {
-          statusDiv.textContent = "❌ Failed to send code.";
-        }
-      } catch {
-        statusDiv.textContent = "❌ Server error.";
-      }
-    });
-
-    async function verifyOTP() {
-      const otp = document.getElementById("otp").value.trim();
-      const email = emailInput.value.trim();
-      const verifyStatus = document.getElementById("verify-status");
-      const phoneStep = document.getElementById("phone-step");
+    async function sendOtp() {
+      const email = document.getElementById("email-input").value.trim();
+      if (!email) return alert("Enter your email.");
+      currentEmail = email;
 
       const formData = new FormData();
       formData.append("email", email);
-      formData.append("code", otp);
+      const res = await fetch("/send_otp_email", { method: "POST", body: formData });
+      const data = await res.json();
 
-      try {
-        const res = await fetch("/verify_otp", { method: "POST", body: formData });
-        const result = await res.json();
-
-        if (result.message === "Verified") {
-          verifyStatus.textContent = "🎉 Verified.";
-
-          if (result.linked) {
-            const phone = result.phone;
-            const clean = phone.replace('+', '');
-            phoneStep.innerHTML = `
-              <h2>💳 Balance: 0 tokens</h2>
-              <p>Email: ${email}</p>
-              <p>Phone: ${phone}</p>
-              <div class="pay-options">
-                <button onclick="pay(100, '${clean}')">$1 → 20 tokens</button>
-                <button onclick="pay(1000, '${clean}')">$10 → 200 tokens</button>
-                <button onclick="pay(2000, '${clean}')">$20 → 400 tokens</button>
-                <button onclick="pay(3000, '${clean}')">$30 → 600 tokens</button>
-              </div>
-            `;
-          } else {
-            phoneStep.innerHTML = `
-              <h2>📱 Enter phone number</h2>
-              <label style="display:flex; align-items:center;">
-                <span style="font-weight:bold; padding:0 5px;">+1</span>
-                <input type="text" id="phone" pattern="[0-9]{10}" maxlength="10" required style="flex:1;">
-              </label>
-              <button type="button" onclick="submitPhone()">Submit Phone</button>
-              <div class="status" id="phone-status"></div>
-            `;
-          }
-
-          phoneStep.style.display = "block";
-        } else {
-          verifyStatus.textContent = result.detail || "❌ Verification failed.";
-        }
-      } catch {
-        verifyStatus.textContent = "❌ Error verifying.";
+      if (res.ok) {
+        alert("✅ Code sent. Check your email!");
+        document.getElementById("otp-form").classList.remove("hidden");
+      } else {
+        alert("❌ " + data.detail);
       }
     }
 
-    async function submitPhone() {
-      const phone = document.getElementById("phone").value.trim();
-      const phoneStatus = document.getElementById("phone-status");
-      const email = emailInput.value.trim();
-      if (!/^\d{10}$/.test(phone)) {
-        phoneStatus.textContent = "❌ Invalid 10-digit number.";
-        return;
-      }
+    async function verifyOtp() {
+      const code = document.getElementById("otp-code").value.trim();
+      if (!code) return alert("Enter OTP code.");
 
       const formData = new FormData();
-      formData.append("email", email);
-      formData.append("phone", "+1" + phone);
+      formData.append("email", currentEmail);
+      formData.append("code", code);
 
-      try {
-        const res = await fetch("/bind_phone", { method: "POST", body: formData });
-        const result = await res.json();
-        if (result.message.includes("success")) {
-          phoneStatus.textContent = "✅ Phone linked.";
-        } else {
-          phoneStatus.textContent = "❌ Failed to bind.";
-        }
-      } catch {
-        phoneStatus.textContent = "❌ Server error.";
+      const res = await fetch("/verify_otp", { method: "POST", body: formData });
+      const data = await res.json();
+
+      if (!res.ok) return alert("❌ " + data.detail);
+
+      if (data.linked) {
+        renderDashboard(data);
+      } else {
+        document.getElementById("phone-form").classList.remove("hidden");
       }
     }
 
-    function pay(amount, phone) {
-      window.location.href = `/create_payment_link?amount=${amount}&phone=${phone}`;
+    async function bindPhone() {
+      const phone = document.getElementById("phone-input").value.trim();
+      if (!phone) return alert("Enter phone.");
+
+      const formData = new FormData();
+      formData.append("email", currentEmail);
+      formData.append("phone", phone);
+
+      const res = await fetch("/bind_phone", { method: "POST", body: formData });
+      const data = await res.json();
+
+      if (!res.ok) return alert("❌ " + data.detail);
+
+      renderDashboard(data);
+    }
+
+    function renderDashboard(data) {
+      document.getElementById("otp-form").classList.add("hidden");
+      document.getElementById("phone-form").classList.add("hidden");
+
+      const dash = document.getElementById("dashboard");
+      dash.classList.remove("hidden");
+      dash.innerHTML = `
+        <h3>🎉 Welcome!</h3>
+        <p><strong>Email:</strong> ${data.email}</p>
+        <p><strong>Phone:</strong> ${data.phone}</p>
+        <p><strong>Tokens:</strong> ${data.tokens}</p>
+        <button onclick="window.location.href='/addtokens/${data.phone.replace('+', '')}'">
+          💳 Buy Tokens
+        </button>
+      `;
     }
   </script>
 </body>
