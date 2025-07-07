@@ -1,4 +1,5 @@
-<!-- Версия 2.6 (2025-07-07) -->
+<!-- Версия 2.9 (2025-07-07) -->
+<!-- ✅ Добавлена кнопка оплаты сразу после привязки телефона -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -47,13 +48,7 @@
   </div>
 
   <div id="phone-step" style="display:none; margin-top: 20px;">
-    <h2>📱 Enter your phone number</h2>
-    <label style="display: flex; align-items: center;">
-      <span style="font-weight: bold; padding: 0 5px;">+1</span>
-      <input type="text" id="phone" name="phone" pattern="[0-9]{10}" maxlength="10" placeholder="Your 10-digit number" required style="flex: 1;">
-    </label>
-    <button type="button" onclick="submitPhone()">Submit Phone</button>
-    <div class="status" id="phone-status"></div>
+    <!-- Will be filled dynamically -->
   </div>
 
   <script>
@@ -92,6 +87,7 @@
       const otp = document.getElementById("otp").value.trim();
       const email = emailInput.value.trim();
       const verifyStatus = document.getElementById("verify-status");
+      const phoneStep = document.getElementById("phone-step");
 
       const formData = new FormData();
       formData.append("email", email);
@@ -107,7 +103,30 @@
 
         if (result.message === "Verified") {
           verifyStatus.textContent = "🎉 Success! You're verified.";
-          document.getElementById("phone-step").style.display = "block";
+
+          if (result.linked) {
+            const phoneClean = result.phone.replace('+', '');
+            phoneStep.innerHTML = `
+              <h2>💳 Balance: 0 tokens</h2>
+              <p>Email: ${email}</p>
+              <p>Phone: ${result.phone}</p>
+              <a href="/addtokens/${phoneClean}">
+                <button>💰 Add Tokens</button>
+              </a>
+            `;
+          } else {
+            phoneStep.innerHTML = `
+              <h2>📱 Enter your phone number</h2>
+              <label style="display: flex; align-items: center;">
+                <span style="font-weight: bold; padding: 0 5px;">+1</span>
+                <input type="text" id="phone" name="phone" pattern="[0-9]{10}" maxlength="10" placeholder="Your 10-digit number" required style="flex: 1;">
+              </label>
+              <button type="button" onclick="submitPhone()">Submit Phone</button>
+              <div class="status" id="phone-status"></div>
+            `;
+          }
+
+          phoneStep.style.display = "block";
         } else if (result.detail === "Code expired") {
           verifyStatus.textContent = "⌛ Code expired.";
         } else if (result.detail === "Code already used") {
@@ -146,15 +165,17 @@
         });
 
         const result = await res.json();
-
         if (result.message === "Phone linked successfully") {
-          phoneStatus.textContent = `✅ Phone successfully linked. Balance: ${result.balance || 0} tokens.`;
-        } else if (result.message === "Phone already linked") {
-          phoneStatus.textContent = `📞 Already linked to this number. Balance: ${result.balance || 0} tokens.`;
+          const phoneClean = fullPhone.replace('+', '');
+          phoneStatus.innerHTML = `
+            ✅ Phone successfully linked. Balance: 0 tokens.<br>
+            <a href="/addtokens/${phoneClean}">
+              <button style="margin-top:10px">💰 Add Tokens</button>
+            </a>
+          `;
         } else {
           phoneStatus.textContent = "❌ Failed to bind phone.";
         }
-
       } catch (err) {
         phoneStatus.textContent = "❌ Server error.";
       }

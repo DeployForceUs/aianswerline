@@ -1,5 +1,6 @@
-# Версия 2.5.1 (2025-07-06)
-# 📩 OTP: PostgreSQL, лимит попыток, истечение срока, корректные ошибки, привязка телефона (одноразовая)
+# Версия 2.6 (2025-07-07)
+# ✅ verify_otp теперь возвращает linked и phone (если есть), вместо запроса /check_phone_linked
+# ✅ Удалена необходимость лишнего запроса после верификации
 
 from fastapi import APIRouter, Form, HTTPException
 from fastapi.responses import JSONResponse
@@ -75,11 +76,25 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
         raise HTTPException(status_code=400, detail="Invalid code")
 
     cur.execute("UPDATE email_otp SET used = TRUE WHERE id = %s", (otp_id,))
-    return JSONResponse(content={"message": "Verified"})
+
+    # 🔍 Проверка привязки телефона
+    cur.execute("SELECT phone FROM user_profiles WHERE email = %s", (email,))
+    phone_row = cur.fetchone()
+
+    if phone_row:
+        return JSONResponse(content={
+            "message": "Verified",
+            "linked": True,
+            "phone": phone_row[0]
+        })
+    else:
+        return JSONResponse(content={
+            "message": "Verified",
+            "linked": False
+        })
 
 @router.post("/bind_phone")
 async def bind_phone(email: str = Form(...), phone: str = Form(...)):
-    # Проверка: привязан ли уже телефон к email
     cur.execute("SELECT phone FROM user_profiles WHERE email = %s", (email,))
     existing = cur.fetchone()
 
@@ -89,7 +104,6 @@ async def bind_phone(email: str = Form(...), phone: str = Form(...)):
             "phone": existing[0]
         })
 
-    # Привязка
     cur.execute("""
         INSERT INTO user_profiles (email, phone)
         VALUES (%s, %s)
