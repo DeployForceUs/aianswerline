@@ -6,3 +6,4 @@ venv/
 *.sqlite3
 *.log
 venv_addtokens/
+__pycache__/
