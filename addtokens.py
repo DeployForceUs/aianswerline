@@ -1,9 +1,10 @@
-# Версия 1.0 (2025-07-07)
-# ✅ Создание ссылки Square с суммой и телефоном в metadata
+# Версия 1.4 (2025-07-07)
+# ✅ Исправлено кеширование Square: теперь каждый платеж уникален
 
 import os
+import uuid
 import httpx
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 from fastapi.responses import RedirectResponse
 
 router = APIRouter()
@@ -21,11 +22,11 @@ async def create_payment_link(amount: int, phone: str):
                 "Content-Type": "application/json"
             },
             json={
-                "idempotency_key": phone + str(amount),
+                "idempotency_key": str(uuid.uuid4()),  # 💣 Уникальный ключ = всегда новая ссылка
                 "quick_pay": {
                     "name": "Token Recharge",
                     "price_money": {
-                        "amount": amount,
+                        "amount": amount * 100,
                         "currency": "USD"
                     },
                     "location_id": SQUARE_LOCATION
