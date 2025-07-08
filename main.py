@@ -1,7 +1,9 @@
-# Версия 5.7 (2025-07-08)
-# ✅ Добавлен TEST_MODE из .env
-# ✅ Если TEST_MODE=true — используется "AIAnswerLine DOT Live"
-# ✅ Если TEST_MODE=false — используется полная ссылка с параметром
+# Версия 5.8 (2025-07-08)
+# ✅ Добавлен endpoint /complete-registration
+# ✅ Добавлена защита от дублирования email (email UNIQUE)
+# ✅ Если номер есть, email обновляется; если нет — создаётся новый пользователь
+# ✅ email не может быть NULL — используем пустую строку как признак отсутствия
+# ✅ Логика fallback-ссылки и TEST_MODE из версии 5.7 сохранена
 
 import os
 import json
@@ -11,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import PlainTextResponse, HTMLResponse
+from fastapi.responses import PlainTextResponse, HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from openai import OpenAI
@@ -78,9 +80,9 @@ async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
         user_id, tokens = row
     else:
         cur.execute("""
-            INSERT INTO users (phone, tokens_balance, created_at)
-            VALUES (%s, %s, %s) RETURNING id
-        """, (From, 2, datetime.utcnow()))
+            INSERT INTO users (phone, tokens_balance, created_at, email)
+            VALUES (%s, %s, %s, %s) RETURNING id
+        """, (From, 2, datetime.utcnow(), ''))
         user_id = cur.fetchone()[0]
         tokens = 2
         cur.execute("""
@@ -119,6 +121,29 @@ async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
         gpt_response = "Sorry, there was an error generating a response."
 
     return gpt_response
+
+@app.post("/complete-registration")
+async def complete_registration(phone: str = Form(...), email: str = Form(...)):
+    print(f"[REGISTRATION] 📥 Phone: {phone} | Email: {email}")
+
+    # Проверка, занят ли email
+    cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+    if cur.fetchone():
+        return JSONResponse(content={"status": "error", "message": "This email is already in use"}, status_code=400)
+
+    # Проверка, есть ли пользователь с этим номером
+    cur.execute("SELECT id, email FROM users WHERE phone = %s", (phone,))
+    row = cur.fetchone()
+
+    if row:
+        cur.execute("UPDATE users SET email = %s WHERE phone = %s", (email, phone))
+        return {"status": "ok", "message": "Email linked to existing user"}
+    else:
+        cur.execute("""
+            INSERT INTO users (phone, email, tokens_balance, created_at)
+            VALUES (%s, %s, %s, %s)
+        """, (phone, email, 0, datetime.utcnow()))
+        return {"status": "ok", "message": "New user created with email"}
 
 @app.post("/twilio-status")
 async def twilio_status(status_data: dict):
