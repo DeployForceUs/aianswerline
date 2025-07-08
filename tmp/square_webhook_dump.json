@@ -270,3 +270,927 @@
     }
   }
 }
+{
+  "merchant_id": "5Q1WH6V6R4GNC",
+  "type": "payment.created",
+  "event_id": "a56be53b-6ea0-376f-b95b-1c266dbdd0b2",
+  "created_at": "2025-07-08T05:05:52.292Z",
+  "data": {
+    "type": "payment",
+    "id": "397BUhGFEGWGj14eJlZaXOl5F3aZY",
+    "object": {
+      "payment": {
+        "amount_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "application_details": {
+          "application_id": "sq0idp-w46nJ_NCNDMSOywaCY0mwA",
+          "square_product": "ECOMMERCE_API"
+        },
+        "approved_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "billing_address": {
+          "address_line_1": "1800 S Ocean Dr, Apt 3305",
+          "country": "US",
+          "first_name": "Dmitry",
+          "last_name": "Karpov",
+          "locality": "Hallandale",
+          "postal_code": "33020"
+        },
+        "buyer_email_address": "dimabmw@me.com",
+        "capabilities": [
+          "EDIT_AMOUNT_UP",
+          "EDIT_AMOUNT_DOWN",
+          "EDIT_TIP_AMOUNT_UP",
+          "EDIT_TIP_AMOUNT_DOWN"
+        ],
+        "card_details": {
+          "auth_result_code": "059439",
+          "avs_status": "AVS_ACCEPTED",
+          "card": {
+            "bin": "433763",
+            "card_brand": "VISA",
+            "card_type": "DEBIT",
+            "exp_month": 12,
+            "exp_year": 2031,
+            "fingerprint": "sq-1-ivyR41sd_TWyO9tIFQERvQ-lGhBsiz5Fa5FrzpnXkZRJ47WIiarTmJC_J6iy8-qZ6w",
+            "last_4": "9814",
+            "payment_account_reference": "V0010013019337674937896034975",
+            "prepaid_type": "NOT_PREPAID"
+          },
+          "card_payment_timeline": {
+            "authorized_at": "2025-07-08T05:05:52.135Z"
+          },
+          "cvv_status": "CVV_NOT_CHECKED",
+          "entry_method": "KEYED",
+          "statement_description": "SQ *ORVIS LLC",
+          "status": "AUTHORIZED"
+        },
+        "created_at": "2025-07-08T05:05:51.531Z",
+        "delay_action": "CANCEL",
+        "delay_duration": "PT168H",
+        "delayed_until": "2025-07-15T05:05:51.531Z",
+        "id": "397BUhGFEGWGj14eJlZaXOl5F3aZY",
+        "location_id": "A6VFNGKKYHZXN",
+        "order_id": "kJk1GeThaGPMN7ccwqNHwUi2iXTZY",
+        "receipt_number": "397B",
+        "risk_evaluation": {
+          "created_at": "2025-07-08T05:05:52.275Z",
+          "risk_level": "NORMAL"
+        },
+        "shipping_address": {
+          "first_name": "Dmitry",
+          "last_name": "Karpov"
+        },
+        "source_type": "CARD",
+        "status": "APPROVED",
+        "tip_money": {
+          "amount": 0,
+          "currency": "USD"
+        },
+        "total_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "updated_at": "2025-07-08T05:05:52.135Z",
+        "version": 1
+      }
+    }
+  }
+}
+{
+  "merchant_id": "5Q1WH6V6R4GNC",
+  "type": "payment.updated",
+  "event_id": "a848a49d-5b37-3058-8cd3-6db22f28da82",
+  "created_at": "2025-07-08T05:05:54.88Z",
+  "data": {
+    "type": "payment",
+    "id": "397BUhGFEGWGj14eJlZaXOl5F3aZY",
+    "object": {
+      "payment": {
+        "amount_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "application_details": {
+          "application_id": "sq0idp-w46nJ_NCNDMSOywaCY0mwA",
+          "square_product": "ECOMMERCE_API"
+        },
+        "approved_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "billing_address": {
+          "address_line_1": "1800 S Ocean Dr, Apt 3305",
+          "country": "US",
+          "first_name": "Dmitry",
+          "last_name": "Karpov",
+          "locality": "Hallandale",
+          "postal_code": "33020"
+        },
+        "buyer_email_address": "dimabmw@me.com",
+        "card_details": {
+          "auth_result_code": "059439",
+          "avs_status": "AVS_ACCEPTED",
+          "card": {
+            "bin": "433763",
+            "card_brand": "VISA",
+            "card_type": "DEBIT",
+            "exp_month": 12,
+            "exp_year": 2031,
+            "fingerprint": "sq-1-ivyR41sd_TWyO9tIFQERvQ-lGhBsiz5Fa5FrzpnXkZRJ47WIiarTmJC_J6iy8-qZ6w",
+            "last_4": "9814",
+            "payment_account_reference": "V0010013019337674937896034975",
+            "prepaid_type": "NOT_PREPAID"
+          },
+          "card_payment_timeline": {
+            "authorized_at": "2025-07-08T05:05:52.135Z",
+            "captured_at": "2025-07-08T05:05:52.652Z"
+          },
+          "cvv_status": "CVV_NOT_CHECKED",
+          "entry_method": "KEYED",
+          "statement_description": "SQ *ORVIS LLC",
+          "status": "CAPTURED"
+        },
+        "created_at": "2025-07-08T05:05:51.531Z",
+        "delay_action": "CANCEL",
+        "delay_duration": "PT168H",
+        "delayed_until": "2025-07-15T05:05:51.531Z",
+        "id": "397BUhGFEGWGj14eJlZaXOl5F3aZY",
+        "location_id": "A6VFNGKKYHZXN",
+        "order_id": "kJk1GeThaGPMN7ccwqNHwUi2iXTZY",
+        "receipt_number": "397B",
+        "receipt_url": "https://squareup.com/receipt/preview/397BUhGFEGWGj14eJlZaXOl5F3aZY",
+        "risk_evaluation": {
+          "created_at": "2025-07-08T05:05:52.275Z",
+          "risk_level": "NORMAL"
+        },
+        "shipping_address": {
+          "first_name": "Dmitry",
+          "last_name": "Karpov"
+        },
+        "source_type": "CARD",
+        "status": "COMPLETED",
+        "tip_money": {
+          "amount": 0,
+          "currency": "USD"
+        },
+        "total_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "updated_at": "2025-07-08T05:05:54.872Z",
+        "version": 3
+      }
+    }
+  }
+}
+{
+  "merchant_id": "5Q1WH6V6R4GNC",
+  "type": "payment.updated",
+  "event_id": "cf44eb68-1cb0-3ca5-bb0b-0f7bfadcd131",
+  "created_at": "2025-07-08T05:05:58.191Z",
+  "data": {
+    "type": "payment",
+    "id": "397BUhGFEGWGj14eJlZaXOl5F3aZY",
+    "object": {
+      "payment": {
+        "amount_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "application_details": {
+          "application_id": "sq0idp-w46nJ_NCNDMSOywaCY0mwA",
+          "square_product": "ECOMMERCE_API"
+        },
+        "approved_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "billing_address": {
+          "address_line_1": "1800 S Ocean Dr, Apt 3305",
+          "country": "US",
+          "first_name": "Dmitry",
+          "last_name": "Karpov",
+          "locality": "Hallandale",
+          "postal_code": "33020"
+        },
+        "buyer_email_address": "dimabmw@me.com",
+        "card_details": {
+          "auth_result_code": "059439",
+          "avs_status": "AVS_ACCEPTED",
+          "card": {
+            "bin": "433763",
+            "card_brand": "VISA",
+            "card_type": "DEBIT",
+            "exp_month": 12,
+            "exp_year": 2031,
+            "fingerprint": "sq-1-ivyR41sd_TWyO9tIFQERvQ-lGhBsiz5Fa5FrzpnXkZRJ47WIiarTmJC_J6iy8-qZ6w",
+            "last_4": "9814",
+            "payment_account_reference": "V0010013019337674937896034975",
+            "prepaid_type": "NOT_PREPAID"
+          },
+          "card_payment_timeline": {
+            "authorized_at": "2025-07-08T05:05:52.135Z",
+            "captured_at": "2025-07-08T05:05:52.652Z"
+          },
+          "cvv_status": "CVV_NOT_CHECKED",
+          "entry_method": "KEYED",
+          "statement_description": "SQ *ORVIS LLC",
+          "status": "CAPTURED"
+        },
+        "created_at": "2025-07-08T05:05:51.531Z",
+        "customer_id": "2ZXXZ2JYYH4QDF7V1C15ZW0RAR",
+        "delay_action": "CANCEL",
+        "delay_duration": "PT168H",
+        "delayed_until": "2025-07-15T05:05:51.531Z",
+        "id": "397BUhGFEGWGj14eJlZaXOl5F3aZY",
+        "location_id": "A6VFNGKKYHZXN",
+        "order_id": "kJk1GeThaGPMN7ccwqNHwUi2iXTZY",
+        "receipt_number": "397B",
+        "receipt_url": "https://squareup.com/receipt/preview/397BUhGFEGWGj14eJlZaXOl5F3aZY",
+        "risk_evaluation": {
+          "created_at": "2025-07-08T05:05:52.275Z",
+          "risk_level": "NORMAL"
+        },
+        "shipping_address": {
+          "first_name": "Dmitry",
+          "last_name": "Karpov"
+        },
+        "source_type": "CARD",
+        "status": "COMPLETED",
+        "tip_money": {
+          "amount": 0,
+          "currency": "USD"
+        },
+        "total_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "updated_at": "2025-07-08T05:05:56.284Z",
+        "version": 5
+      }
+    }
+  }
+}
+{
+  "merchant_id": "5Q1WH6V6R4GNC",
+  "type": "payment.updated",
+  "event_id": "5a686c95-d9ad-3eb2-a272-bd7d95f76ba4",
+  "created_at": "2025-07-08T05:05:58.817Z",
+  "data": {
+    "type": "payment",
+    "id": "397BUhGFEGWGj14eJlZaXOl5F3aZY",
+    "object": {
+      "payment": {
+        "amount_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "application_details": {
+          "application_id": "sq0idp-w46nJ_NCNDMSOywaCY0mwA",
+          "square_product": "ECOMMERCE_API"
+        },
+        "approved_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "billing_address": {
+          "address_line_1": "1800 S Ocean Dr, Apt 3305",
+          "country": "US",
+          "first_name": "Dmitry",
+          "last_name": "Karpov",
+          "locality": "Hallandale",
+          "postal_code": "33020"
+        },
+        "buyer_email_address": "dimabmw@me.com",
+        "card_details": {
+          "auth_result_code": "059439",
+          "avs_status": "AVS_ACCEPTED",
+          "card": {
+            "bin": "433763",
+            "card_brand": "VISA",
+            "card_type": "DEBIT",
+            "exp_month": 12,
+            "exp_year": 2031,
+            "fingerprint": "sq-1-ivyR41sd_TWyO9tIFQERvQ-lGhBsiz5Fa5FrzpnXkZRJ47WIiarTmJC_J6iy8-qZ6w",
+            "last_4": "9814",
+            "payment_account_reference": "V0010013019337674937896034975",
+            "prepaid_type": "NOT_PREPAID"
+          },
+          "card_payment_timeline": {
+            "authorized_at": "2025-07-08T05:05:52.135Z",
+            "captured_at": "2025-07-08T05:05:52.652Z"
+          },
+          "cvv_status": "CVV_NOT_CHECKED",
+          "entry_method": "KEYED",
+          "statement_description": "SQ *ORVIS LLC",
+          "status": "CAPTURED"
+        },
+        "created_at": "2025-07-08T05:05:51.531Z",
+        "customer_id": "2ZXXZ2JYYH4QDF7V1C15ZW0RAR",
+        "delay_action": "CANCEL",
+        "delay_duration": "PT168H",
+        "delayed_until": "2025-07-15T05:05:51.531Z",
+        "id": "397BUhGFEGWGj14eJlZaXOl5F3aZY",
+        "location_id": "A6VFNGKKYHZXN",
+        "order_id": "kJk1GeThaGPMN7ccwqNHwUi2iXTZY",
+        "processing_fee": [
+          {
+            "amount_money": {
+              "amount": 33,
+              "currency": "USD"
+            },
+            "effective_at": "2025-07-08T07:05:54.000Z",
+            "type": "INITIAL"
+          }
+        ],
+        "receipt_number": "397B",
+        "receipt_url": "https://squareup.com/receipt/preview/397BUhGFEGWGj14eJlZaXOl5F3aZY",
+        "risk_evaluation": {
+          "created_at": "2025-07-08T05:05:52.275Z",
+          "risk_level": "NORMAL"
+        },
+        "shipping_address": {
+          "first_name": "Dmitry",
+          "last_name": "Karpov"
+        },
+        "source_type": "CARD",
+        "status": "COMPLETED",
+        "tip_money": {
+          "amount": 0,
+          "currency": "USD"
+        },
+        "total_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "updated_at": "2025-07-08T05:05:56.284Z",
+        "version": 6
+      }
+    }
+  }
+}
+{
+  "merchant_id": "5Q1WH6V6R4GNC",
+  "type": "payment.updated",
+  "event_id": "ccc3098c-942d-3e8b-bfe7-7c437ff15758",
+  "created_at": "2025-07-08T05:07:58.541Z",
+  "data": {
+    "type": "payment",
+    "id": "397BUhGFEGWGj14eJlZaXOl5F3aZY",
+    "object": {
+      "payment": {
+        "amount_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "application_details": {
+          "application_id": "sq0idp-w46nJ_NCNDMSOywaCY0mwA",
+          "square_product": "ECOMMERCE_API"
+        },
+        "approved_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "billing_address": {
+          "address_line_1": "1800 S Ocean Dr, Apt 3305",
+          "country": "US",
+          "first_name": "Dmitry",
+          "last_name": "Karpov",
+          "locality": "Hallandale",
+          "postal_code": "33020"
+        },
+        "buyer_email_address": "dimabmw@me.com",
+        "card_details": {
+          "auth_result_code": "059439",
+          "avs_status": "AVS_ACCEPTED",
+          "card": {
+            "bin": "433763",
+            "card_brand": "VISA",
+            "card_type": "DEBIT",
+            "exp_month": 12,
+            "exp_year": 2031,
+            "fingerprint": "sq-1-ivyR41sd_TWyO9tIFQERvQ-lGhBsiz5Fa5FrzpnXkZRJ47WIiarTmJC_J6iy8-qZ6w",
+            "last_4": "9814",
+            "payment_account_reference": "V0010013019337674937896034975",
+            "prepaid_type": "NOT_PREPAID"
+          },
+          "card_payment_timeline": {
+            "authorized_at": "2025-07-08T05:05:52.135Z",
+            "captured_at": "2025-07-08T05:05:52.652Z"
+          },
+          "cvv_status": "CVV_NOT_CHECKED",
+          "entry_method": "KEYED",
+          "statement_description": "SQ *ORVIS LLC",
+          "status": "CAPTURED"
+        },
+        "created_at": "2025-07-08T05:05:51.531Z",
+        "customer_id": "2ZXXZ2JYYH4QDF7V1C15ZW0RAR",
+        "delay_action": "CANCEL",
+        "delay_duration": "PT168H",
+        "delayed_until": "2025-07-15T05:05:51.531Z",
+        "id": "397BUhGFEGWGj14eJlZaXOl5F3aZY",
+        "location_id": "A6VFNGKKYHZXN",
+        "order_id": "kJk1GeThaGPMN7ccwqNHwUi2iXTZY",
+        "processing_fee": [
+          {
+            "amount_money": {
+              "amount": 33,
+              "currency": "USD"
+            },
+            "effective_at": "2025-07-08T07:05:54.000Z",
+            "type": "INITIAL"
+          }
+        ],
+        "receipt_number": "397B",
+        "receipt_url": "https://squareup.com/receipt/preview/397BUhGFEGWGj14eJlZaXOl5F3aZY",
+        "risk_evaluation": {
+          "created_at": "2025-07-08T05:07:55.829Z",
+          "risk_level": "NORMAL"
+        },
+        "shipping_address": {
+          "first_name": "Dmitry",
+          "last_name": "Karpov"
+        },
+        "source_type": "CARD",
+        "status": "COMPLETED",
+        "tip_money": {
+          "amount": 0,
+          "currency": "USD"
+        },
+        "total_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "updated_at": "2025-07-08T05:05:56.284Z",
+        "version": 7
+      }
+    }
+  }
+}
+{
+  "merchant_id": "5Q1WH6V6R4GNC",
+  "type": "payment.created",
+  "event_id": "0177883e-f05a-3963-8115-33c3f2db2484",
+  "created_at": "2025-07-08T05:23:40.71Z",
+  "data": {
+    "type": "payment",
+    "id": "znZnNpeqlm4ILd2NQRmdDXTBiDAZY",
+    "object": {
+      "payment": {
+        "amount_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "application_details": {
+          "application_id": "sq0idp-w46nJ_NCNDMSOywaCY0mwA",
+          "square_product": "ECOMMERCE_API"
+        },
+        "approved_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "billing_address": {
+          "address_line_1": "1800 S Ocean Dr, Apt 3305",
+          "country": "US",
+          "first_name": "Dmitry",
+          "last_name": "Karpov",
+          "locality": "Hallandale",
+          "postal_code": "33020"
+        },
+        "buyer_email_address": "dimabmw@me.com",
+        "capabilities": [
+          "EDIT_AMOUNT_UP",
+          "EDIT_AMOUNT_DOWN",
+          "EDIT_TIP_AMOUNT_UP",
+          "EDIT_TIP_AMOUNT_DOWN"
+        ],
+        "card_details": {
+          "auth_result_code": "002614",
+          "avs_status": "AVS_ACCEPTED",
+          "card": {
+            "bin": "433763",
+            "card_brand": "VISA",
+            "card_type": "DEBIT",
+            "exp_month": 12,
+            "exp_year": 2031,
+            "fingerprint": "sq-1-ivyR41sd_TWyO9tIFQERvQ-lGhBsiz5Fa5FrzpnXkZRJ47WIiarTmJC_J6iy8-qZ6w",
+            "last_4": "9814",
+            "payment_account_reference": "V0010013019337674937896034975",
+            "prepaid_type": "NOT_PREPAID"
+          },
+          "card_payment_timeline": {
+            "authorized_at": "2025-07-08T05:23:40.548Z"
+          },
+          "cvv_status": "CVV_NOT_CHECKED",
+          "entry_method": "KEYED",
+          "statement_description": "SQ *ORVIS LLC",
+          "status": "AUTHORIZED"
+        },
+        "created_at": "2025-07-08T05:23:39.919Z",
+        "delay_action": "CANCEL",
+        "delay_duration": "PT168H",
+        "delayed_until": "2025-07-15T05:23:39.919Z",
+        "id": "znZnNpeqlm4ILd2NQRmdDXTBiDAZY",
+        "location_id": "A6VFNGKKYHZXN",
+        "order_id": "gDIqnsqKtdHQFlPqnTKbozkbV8EZY",
+        "receipt_number": "znZn",
+        "risk_evaluation": {
+          "created_at": "2025-07-08T05:23:40.688Z",
+          "risk_level": "NORMAL"
+        },
+        "shipping_address": {
+          "first_name": "Dmitry",
+          "last_name": "Karpov"
+        },
+        "source_type": "CARD",
+        "status": "APPROVED",
+        "tip_money": {
+          "amount": 0,
+          "currency": "USD"
+        },
+        "total_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "updated_at": "2025-07-08T05:23:40.548Z",
+        "version": 1
+      }
+    }
+  }
+}
+{
+  "merchant_id": "5Q1WH6V6R4GNC",
+  "type": "payment.updated",
+  "event_id": "3d334825-a19c-3c1d-9583-c828c0b55103",
+  "created_at": "2025-07-08T05:23:42.798Z",
+  "data": {
+    "type": "payment",
+    "id": "znZnNpeqlm4ILd2NQRmdDXTBiDAZY",
+    "object": {
+      "payment": {
+        "amount_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "application_details": {
+          "application_id": "sq0idp-w46nJ_NCNDMSOywaCY0mwA",
+          "square_product": "ECOMMERCE_API"
+        },
+        "approved_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "billing_address": {
+          "address_line_1": "1800 S Ocean Dr, Apt 3305",
+          "country": "US",
+          "first_name": "Dmitry",
+          "last_name": "Karpov",
+          "locality": "Hallandale",
+          "postal_code": "33020"
+        },
+        "buyer_email_address": "dimabmw@me.com",
+        "card_details": {
+          "auth_result_code": "002614",
+          "avs_status": "AVS_ACCEPTED",
+          "card": {
+            "bin": "433763",
+            "card_brand": "VISA",
+            "card_type": "DEBIT",
+            "exp_month": 12,
+            "exp_year": 2031,
+            "fingerprint": "sq-1-ivyR41sd_TWyO9tIFQERvQ-lGhBsiz5Fa5FrzpnXkZRJ47WIiarTmJC_J6iy8-qZ6w",
+            "last_4": "9814",
+            "payment_account_reference": "V0010013019337674937896034975",
+            "prepaid_type": "NOT_PREPAID"
+          },
+          "card_payment_timeline": {
+            "authorized_at": "2025-07-08T05:23:40.548Z",
+            "captured_at": "2025-07-08T05:23:40.889Z"
+          },
+          "cvv_status": "CVV_NOT_CHECKED",
+          "entry_method": "KEYED",
+          "statement_description": "SQ *ORVIS LLC",
+          "status": "CAPTURED"
+        },
+        "created_at": "2025-07-08T05:23:39.919Z",
+        "delay_action": "CANCEL",
+        "delay_duration": "PT168H",
+        "delayed_until": "2025-07-15T05:23:39.919Z",
+        "id": "znZnNpeqlm4ILd2NQRmdDXTBiDAZY",
+        "location_id": "A6VFNGKKYHZXN",
+        "order_id": "gDIqnsqKtdHQFlPqnTKbozkbV8EZY",
+        "receipt_number": "znZn",
+        "receipt_url": "https://squareup.com/receipt/preview/znZnNpeqlm4ILd2NQRmdDXTBiDAZY",
+        "risk_evaluation": {
+          "created_at": "2025-07-08T05:23:40.688Z",
+          "risk_level": "NORMAL"
+        },
+        "shipping_address": {
+          "first_name": "Dmitry",
+          "last_name": "Karpov"
+        },
+        "source_type": "CARD",
+        "status": "COMPLETED",
+        "tip_money": {
+          "amount": 0,
+          "currency": "USD"
+        },
+        "total_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "updated_at": "2025-07-08T05:23:42.790Z",
+        "version": 2
+      }
+    }
+  }
+}
+{
+  "merchant_id": "5Q1WH6V6R4GNC",
+  "type": "payment.updated",
+  "event_id": "d00cb566-99f6-3095-9641-2950ff0916c3",
+  "created_at": "2025-07-08T05:23:46.055Z",
+  "data": {
+    "type": "payment",
+    "id": "znZnNpeqlm4ILd2NQRmdDXTBiDAZY",
+    "object": {
+      "payment": {
+        "amount_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "application_details": {
+          "application_id": "sq0idp-w46nJ_NCNDMSOywaCY0mwA",
+          "square_product": "ECOMMERCE_API"
+        },
+        "approved_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "billing_address": {
+          "address_line_1": "1800 S Ocean Dr, Apt 3305",
+          "country": "US",
+          "first_name": "Dmitry",
+          "last_name": "Karpov",
+          "locality": "Hallandale",
+          "postal_code": "33020"
+        },
+        "buyer_email_address": "dimabmw@me.com",
+        "card_details": {
+          "auth_result_code": "002614",
+          "avs_status": "AVS_ACCEPTED",
+          "card": {
+            "bin": "433763",
+            "card_brand": "VISA",
+            "card_type": "DEBIT",
+            "exp_month": 12,
+            "exp_year": 2031,
+            "fingerprint": "sq-1-ivyR41sd_TWyO9tIFQERvQ-lGhBsiz5Fa5FrzpnXkZRJ47WIiarTmJC_J6iy8-qZ6w",
+            "last_4": "9814",
+            "payment_account_reference": "V0010013019337674937896034975",
+            "prepaid_type": "NOT_PREPAID"
+          },
+          "card_payment_timeline": {
+            "authorized_at": "2025-07-08T05:23:40.548Z",
+            "captured_at": "2025-07-08T05:23:40.889Z"
+          },
+          "cvv_status": "CVV_NOT_CHECKED",
+          "entry_method": "KEYED",
+          "statement_description": "SQ *ORVIS LLC",
+          "status": "CAPTURED"
+        },
+        "created_at": "2025-07-08T05:23:39.919Z",
+        "customer_id": "2ZXXZ2JYYH4QDF7V1C15ZW0RAR",
+        "delay_action": "CANCEL",
+        "delay_duration": "PT168H",
+        "delayed_until": "2025-07-15T05:23:39.919Z",
+        "id": "znZnNpeqlm4ILd2NQRmdDXTBiDAZY",
+        "location_id": "A6VFNGKKYHZXN",
+        "order_id": "gDIqnsqKtdHQFlPqnTKbozkbV8EZY",
+        "receipt_number": "znZn",
+        "receipt_url": "https://squareup.com/receipt/preview/znZnNpeqlm4ILd2NQRmdDXTBiDAZY",
+        "risk_evaluation": {
+          "created_at": "2025-07-08T05:23:40.688Z",
+          "risk_level": "NORMAL"
+        },
+        "shipping_address": {
+          "first_name": "Dmitry",
+          "last_name": "Karpov"
+        },
+        "source_type": "CARD",
+        "status": "COMPLETED",
+        "tip_money": {
+          "amount": 0,
+          "currency": "USD"
+        },
+        "total_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "updated_at": "2025-07-08T05:23:42.790Z",
+        "version": 4
+      }
+    }
+  }
+}
+{
+  "merchant_id": "5Q1WH6V6R4GNC",
+  "type": "payment.updated",
+  "event_id": "584754e8-98bf-3c35-b294-4a0fb75a242b",
+  "created_at": "2025-07-08T05:23:48.38Z",
+  "data": {
+    "type": "payment",
+    "id": "znZnNpeqlm4ILd2NQRmdDXTBiDAZY",
+    "object": {
+      "payment": {
+        "amount_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "application_details": {
+          "application_id": "sq0idp-w46nJ_NCNDMSOywaCY0mwA",
+          "square_product": "ECOMMERCE_API"
+        },
+        "approved_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "billing_address": {
+          "address_line_1": "1800 S Ocean Dr, Apt 3305",
+          "country": "US",
+          "first_name": "Dmitry",
+          "last_name": "Karpov",
+          "locality": "Hallandale",
+          "postal_code": "33020"
+        },
+        "buyer_email_address": "dimabmw@me.com",
+        "card_details": {
+          "auth_result_code": "002614",
+          "avs_status": "AVS_ACCEPTED",
+          "card": {
+            "bin": "433763",
+            "card_brand": "VISA",
+            "card_type": "DEBIT",
+            "exp_month": 12,
+            "exp_year": 2031,
+            "fingerprint": "sq-1-ivyR41sd_TWyO9tIFQERvQ-lGhBsiz5Fa5FrzpnXkZRJ47WIiarTmJC_J6iy8-qZ6w",
+            "last_4": "9814",
+            "payment_account_reference": "V0010013019337674937896034975",
+            "prepaid_type": "NOT_PREPAID"
+          },
+          "card_payment_timeline": {
+            "authorized_at": "2025-07-08T05:23:40.548Z",
+            "captured_at": "2025-07-08T05:23:40.889Z"
+          },
+          "cvv_status": "CVV_NOT_CHECKED",
+          "entry_method": "KEYED",
+          "statement_description": "SQ *ORVIS LLC",
+          "status": "CAPTURED"
+        },
+        "created_at": "2025-07-08T05:23:39.919Z",
+        "customer_id": "2ZXXZ2JYYH4QDF7V1C15ZW0RAR",
+        "delay_action": "CANCEL",
+        "delay_duration": "PT168H",
+        "delayed_until": "2025-07-15T05:23:39.919Z",
+        "id": "znZnNpeqlm4ILd2NQRmdDXTBiDAZY",
+        "location_id": "A6VFNGKKYHZXN",
+        "order_id": "gDIqnsqKtdHQFlPqnTKbozkbV8EZY",
+        "processing_fee": [
+          {
+            "amount_money": {
+              "amount": 33,
+              "currency": "USD"
+            },
+            "effective_at": "2025-07-08T07:23:42.000Z",
+            "type": "INITIAL"
+          }
+        ],
+        "receipt_number": "znZn",
+        "receipt_url": "https://squareup.com/receipt/preview/znZnNpeqlm4ILd2NQRmdDXTBiDAZY",
+        "risk_evaluation": {
+          "created_at": "2025-07-08T05:23:40.688Z",
+          "risk_level": "NORMAL"
+        },
+        "shipping_address": {
+          "first_name": "Dmitry",
+          "last_name": "Karpov"
+        },
+        "source_type": "CARD",
+        "status": "COMPLETED",
+        "tip_money": {
+          "amount": 0,
+          "currency": "USD"
+        },
+        "total_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "updated_at": "2025-07-08T05:23:44.378Z",
+        "version": 6
+      }
+    }
+  }
+}
+{
+  "merchant_id": "5Q1WH6V6R4GNC",
+  "type": "payment.updated",
+  "event_id": "65746b06-dc85-37d0-861b-7c676d9ab418",
+  "created_at": "2025-07-08T05:25:45.124Z",
+  "data": {
+    "type": "payment",
+    "id": "znZnNpeqlm4ILd2NQRmdDXTBiDAZY",
+    "object": {
+      "payment": {
+        "amount_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "application_details": {
+          "application_id": "sq0idp-w46nJ_NCNDMSOywaCY0mwA",
+          "square_product": "ECOMMERCE_API"
+        },
+        "approved_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "billing_address": {
+          "address_line_1": "1800 S Ocean Dr, Apt 3305",
+          "country": "US",
+          "first_name": "Dmitry",
+          "last_name": "Karpov",
+          "locality": "Hallandale",
+          "postal_code": "33020"
+        },
+        "buyer_email_address": "dimabmw@me.com",
+        "card_details": {
+          "auth_result_code": "002614",
+          "avs_status": "AVS_ACCEPTED",
+          "card": {
+            "bin": "433763",
+            "card_brand": "VISA",
+            "card_type": "DEBIT",
+            "exp_month": 12,
+            "exp_year": 2031,
+            "fingerprint": "sq-1-ivyR41sd_TWyO9tIFQERvQ-lGhBsiz5Fa5FrzpnXkZRJ47WIiarTmJC_J6iy8-qZ6w",
+            "last_4": "9814",
+            "payment_account_reference": "V0010013019337674937896034975",
+            "prepaid_type": "NOT_PREPAID"
+          },
+          "card_payment_timeline": {
+            "authorized_at": "2025-07-08T05:23:40.548Z",
+            "captured_at": "2025-07-08T05:23:40.889Z"
+          },
+          "cvv_status": "CVV_NOT_CHECKED",
+          "entry_method": "KEYED",
+          "statement_description": "SQ *ORVIS LLC",
+          "status": "CAPTURED"
+        },
+        "created_at": "2025-07-08T05:23:39.919Z",
+        "customer_id": "2ZXXZ2JYYH4QDF7V1C15ZW0RAR",
+        "delay_action": "CANCEL",
+        "delay_duration": "PT168H",
+        "delayed_until": "2025-07-15T05:23:39.919Z",
+        "id": "znZnNpeqlm4ILd2NQRmdDXTBiDAZY",
+        "location_id": "A6VFNGKKYHZXN",
+        "order_id": "gDIqnsqKtdHQFlPqnTKbozkbV8EZY",
+        "processing_fee": [
+          {
+            "amount_money": {
+              "amount": 33,
+              "currency": "USD"
+            },
+            "effective_at": "2025-07-08T07:23:42.000Z",
+            "type": "INITIAL"
+          }
+        ],
+        "receipt_number": "znZn",
+        "receipt_url": "https://squareup.com/receipt/preview/znZnNpeqlm4ILd2NQRmdDXTBiDAZY",
+        "risk_evaluation": {
+          "created_at": "2025-07-08T05:25:43.526Z",
+          "risk_level": "NORMAL"
+        },
+        "shipping_address": {
+          "first_name": "Dmitry",
+          "last_name": "Karpov"
+        },
+        "source_type": "CARD",
+        "status": "COMPLETED",
+        "tip_money": {
+          "amount": 0,
+          "currency": "USD"
+        },
+        "total_money": {
+          "amount": 100,
+          "currency": "USD"
+        },
+        "updated_at": "2025-07-08T05:23:44.378Z",
+        "version": 7
+      }
+    }
+  }
+}

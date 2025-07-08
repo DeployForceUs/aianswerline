@@ -1,6 +1,6 @@
-# Версия 5.3 (2025-07-08)
-# ✅ description теперь включает и phone, и payment_id
-# ✅ Поле phone используется везде, phone_number удалён
+# Версия 5.4 (2025-07-08)
+# ✅ Добавлена отладочная печать внутри /webhook/square
+# ✅ Мы видим всю входящую структуру до парсинга
 
 import os
 import json
@@ -27,7 +27,7 @@ app.add_middleware(
 
 # === Роутеры ===
 from addtokens import router as addtokens_router
-app.include_router(addtokens_router)  # убрали префикс /addtokens
+app.include_router(addtokens_router)
 
 from google_auth import router as google_auth_router
 app.include_router(google_auth_router)
@@ -124,8 +124,11 @@ async def chat(phone: str = Form(...), message: str = Form(...)):
 @app.post("/webhook/square")
 async def square_webhook(request: Request):
     try:
-        data = await request.json()
         print("[SQUARE] ✅ Webhook received")
+
+        data = await request.json()
+        print("📦 RAW webhook body:")
+        print(json.dumps(data, indent=2))
 
         dump_dir = Path("/opt/aianswerline/tmp")
         dump_dir.mkdir(parents=True, exist_ok=True)
@@ -157,6 +160,7 @@ async def square_webhook(request: Request):
         return {"status": "ok", "message": "webhook received, no phone or amount invalid"}
 
     except Exception as e:
+        print("[SQUARE ERROR]:", str(e))
         return {"status": "error", "details": f"webhook error: {str(e)}"}
 
 # === Landing Page ===

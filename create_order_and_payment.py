@@ -1,7 +1,9 @@
-# Версия 1.4 (2025-07-08)
+# Версия 1.6 (2025-07-08)
 # ✅ Square требует {"order_id": ...} — окончательно исправлено!
 # ✅ Прямой Redirect после успешной генерации ссылки
 # ✅ Добавлена отладочная печать SQUARE_LOCATION и TOKEN в журнал
+# ✅ Печать amount, phone, payload, и ссылки — для полного контроля
+# ✅ Добавлены custom_fields с телефоном (для извлечения в webhook)
 
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi import APIRouter
@@ -50,6 +52,9 @@ async def create_order_payment(amount: int, phone: str):
         }
     }
 
+    print(f"📤 Creating order for ${amount}, phone: {phone}")
+    print(f"📤 Payload:\n{order_payload}")
+
     async with httpx.AsyncClient() as client:
         order_resp = await client.post(
             "https://connect.squareup.com/v2/orders",
@@ -57,6 +62,8 @@ async def create_order_payment(amount: int, phone: str):
             json=order_payload
         )
         order_data = order_resp.json()
+        print(f"📥 Order response [{order_resp.status_code}]:\n{order_data}")
+
         if order_resp.status_code != 200 or "order" not in order_data:
             return JSONResponse({
                 "error": "Order creation failed",
@@ -69,7 +76,13 @@ async def create_order_payment(amount: int, phone: str):
             "idempotency_key": payment_idempotency_key,
             "order_id": order_id,
             "checkout_options": {
-                "redirect_url": "https://aianswerline.live"
+                "redirect_url": "https://aianswerline.live",
+                "custom_fields": [
+                    {
+                        "title": "Phone",
+                        "value": phone
+                    }
+                ]
             }
         }
 
@@ -78,8 +91,9 @@ async def create_order_payment(amount: int, phone: str):
             headers=headers,
             json=payment_payload
         )
-
         payment_data = payment_resp.json()
+        print(f"💳 Payment response [{payment_resp.status_code}]:\n{payment_data}")
+
         if payment_resp.status_code != 200 or "payment_link" not in payment_data:
             return JSONResponse({
                 "error": "No payment link returned",
@@ -87,4 +101,5 @@ async def create_order_payment(amount: int, phone: str):
             }, status_code=500)
 
         url = payment_data["payment_link"]["url"]
+        print(f"🔗 Payment link generated:\n{url}")
         return RedirectResponse(url)
