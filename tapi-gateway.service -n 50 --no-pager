@@ -1,0 +1,6 @@
+● fastapi-gateway.service - FastAPI Gateway Service
+     Loaded: loaded (]8;;file://airline/etc/systemd/system/fastapi-gateway.service/etc/systemd/system/fastapi-gateway.service]8;;; [0;1;32menabled[0m; preset: [0;1;32menabled[0m)
+     Active: activating (auto-restart) (Result: exit-code) since Mon 2025-07-07 21:42:56 EDT; 2s ago
+    Process: 668765 ExecStart=/opt/aianswerline/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 [0;1;31m(code=exited, status=1/FAILURE)[0m
+   Main PID: 668765 (code=exited, status=1/FAILURE)
+        CPU: 411ms

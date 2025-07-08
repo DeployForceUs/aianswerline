@@ -1,5 +1,6 @@
-# Версия 5.1 (2025-07-07)
-# ✅ Убран префикс /addtokens → /create_payment_link теперь доступен напрямую
+# Версия 5.3 (2025-07-08)
+# ✅ description теперь включает и phone, и payment_id
+# ✅ Поле phone используется везде, phone_number удалён
 
 import os
 import json
@@ -9,8 +10,9 @@ from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.templating import Jinja2Templates
 from openai import OpenAI
 
 load_dotenv(dotenv_path="/opt/aianswerline/.env")
@@ -32,6 +34,9 @@ app.include_router(google_auth_router)
 
 from otp_router import router as otp_router
 app.include_router(otp_router)
+
+from create_order_and_payment import router as payment_router
+app.include_router(payment_router)
 
 # === Sync DB (psycopg2) ===
 conn = psycopg2.connect(
@@ -63,14 +68,14 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 @app.post("/twilio-hook", response_class=PlainTextResponse)
 async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
     print(f"[Twilio SMS] 📩 From {From}: {Body}")
-    cur.execute("SELECT id, tokens_balance FROM users WHERE phone_number = %s", (From,))
+    cur.execute("SELECT id, tokens_balance FROM users WHERE phone = %s", (From,))
     row = cur.fetchone()
 
     if row:
         user_id, tokens = row
     else:
         cur.execute("""
-            INSERT INTO users (phone_number, verification_code, is_verified, tokens_balance, created_at)
+            INSERT INTO users (phone, verification_code, is_verified, tokens_balance, created_at)
             VALUES (%s, %s, %s, %s, %s) RETURNING id
         """, (From, '000000', True, 2, datetime.utcnow()))
         user_id = cur.fetchone()[0]
@@ -112,8 +117,8 @@ async def twilio_status(status_data: dict):
     return {"status": "received"}
 
 @app.post("/chat", response_class=PlainTextResponse)
-async def chat(phone_number: str = Form(...), message: str = Form(...)):
-    print(f"[TEST CHAT] 📲 {phone_number}: {message}")
+async def chat(phone: str = Form(...), message: str = Form(...)):
+    print(f"[TEST CHAT] 📲 {phone}: {message}")
     return f"Mock response to your message: {message}"
 
 @app.post("/webhook/square")
@@ -129,28 +134,32 @@ async def square_webhook(request: Request):
             json.dump(data, f, indent=2)
             f.write("\n")
 
-        metadata = data.get("data", {}).get("object", {}).get("payment", {}).get("metadata", {})
+        payment = data.get("data", {}).get("object", {}).get("payment", {})
+        metadata = payment.get("metadata", {})
+        amount_cents = payment.get("amount_money", {}).get("amount", 0)
         phone = metadata.get("phone")
-        if phone:
-            cur.execute("SELECT id FROM users WHERE phone_number = %s", (phone,))
+        payment_id = payment.get("id", "UNKNOWN")
+
+        if phone and amount_cents > 0:
+            tokens_to_add = (amount_cents // 100) * 20
+            cur.execute("SELECT id FROM users WHERE phone = %s", (phone,))
             row = cur.fetchone()
             if row:
                 user_id = row[0]
+                description = f"Payment received: ${amount_cents/100:.2f} | Phone: {phone} | ID: {payment_id}"
                 cur.execute("""
                     INSERT INTO tokens_log (user_id, change, source, description, created_at)
                     VALUES (%s, %s, %s, %s, %s)
-                """, (user_id, 2, 'square', 'Payment received', datetime.utcnow()))
-                cur.execute("UPDATE users SET tokens_balance = tokens_balance + 2 WHERE id = %s", (user_id,))
-                return {"status": "ok", "message": "tokens added"}
+                """, (user_id, tokens_to_add, 'square', description, datetime.utcnow()))
+                cur.execute("UPDATE users SET tokens_balance = tokens_balance + %s WHERE id = %s", (tokens_to_add, user_id))
+                return {"status": "ok", "message": f"{tokens_to_add} tokens added"}
 
-        return {"status": "ok", "message": "webhook received, no phone found"}
+        return {"status": "ok", "message": "webhook received, no phone or amount invalid"}
 
     except Exception as e:
         return {"status": "error", "details": f"webhook error: {str(e)}"}
 
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-
+# === Landing Page ===
 templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)

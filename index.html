@@ -1,3 +1,7 @@
+<!-- Версия 3.5 (2025-07-07)
+✅ Email приводится к нижнему регистру перед отображением
+✅ Добавлено описание версии в HTML
+-->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -76,6 +80,7 @@
   <div class="box">
     <h2>AI AnswerLine</h2>
     <p>Your number has been verified.</p>
+    <p id="email-display"></p>
     <p>Please create your password to continue.</p>
     <input type="password" placeholder="Enter password" />
     <button>Submit</button>
@@ -86,9 +91,15 @@
       <a href="/terms.html" target="_blank">Terms & Conditions</a>
     </div>
   </div>
+
+  <script>
+    // Пример: получить email из URL-параметра ?email=Test@Mail.com
+    const params = new URLSearchParams(window.location.search);
+    const rawEmail = params.get('email');
+    if (rawEmail) {
+      const email = rawEmail.toLowerCase();
+      document.getElementById('email-display').innerText = "Email: " + email;
+    }
+  </script>
 </body>
 </html>
-<!-- deploy trigger: Sat Jun 14 11:25:34 PM UTC 2025 -->
-<!-- manual deploy test: Sat Jun 14 11:39:38 PM UTC 2025 -->
-<!-- deploy check: Sat Jun 14 11:46:08 PM UTC 2025 -->
-<!-- trigger via port 22: Sun Jun 15 12:34:21 AM UTC 2025 -->
