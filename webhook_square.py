@@ -1,5 +1,9 @@
-# Версия 1.1.3 (2025-07-05)
-# Webhook Square -> проверка, запись в Postgres + лог в файл
+# Версия 1.3.0 (2025-07-08)
+# ✅ Начисляется 20 токенов за каждый доллар (из суммы платежа)
+# ✅ Поддержка phone из metadata
+# ✅ Запись в tokens_log и users.tokens
+# ✅ Логирование webhook'а в файл
+# ✅ Добавлен reference_id и payment_id в описание
 
 from fastapi import FastAPI, Request
 import asyncpg
@@ -22,15 +26,21 @@ async def webhook_square(request: Request):
     try:
         payload = await request.json()
 
-        # 🪵 Запись в файл
+        # 🪵 Лог в файл
         os.makedirs("/opt/aianswerline/tmp", exist_ok=True)
         with open("/opt/aianswerline/tmp/square_webhook_dump.json", "w") as f:
             json.dump(payload, f, indent=2)
 
-        phone = payload["data"]["object"]["payment"]["metadata"].get("phone")
+        payment = payload["data"]["object"]["payment"]
+        phone = payment["metadata"].get("phone")
+        amount_cents = payment["amount_money"]["amount"]
+        payment_id = payment["id"]
+        reference_id = payment.get("reference_id", "")
 
         if not phone:
-            return {"status": "error", "details": "No phone number in metadata"}
+            return {"status": "error", "details": "No phone in metadata"}
+
+        tokens_to_add = round((amount_cents / 100) * 20)
 
         conn = await asyncpg.connect(
             host=DB_HOST,
@@ -40,27 +50,31 @@ async def webhook_square(request: Request):
             password=DB_PASS
         )
 
-        user = await conn.fetchrow("SELECT id FROM users WHERE phone_number = $1", phone)
+        user = await conn.fetchrow("SELECT id FROM users WHERE phone = $1", phone)
         if user:
             user_id = user["id"]
         else:
             user = await conn.fetchrow(
-                "INSERT INTO users (phone_number, tokens) VALUES ($1, 0) RETURNING id",
+                "INSERT INTO users (phone, tokens_balance) VALUES ($1, 0) RETURNING id",
                 phone
             )
             user_id = user["id"]
 
+        description = f"Top-up via Square (ID: {payment_id}) for {phone}"
+        if reference_id:
+            description += f" | Ref: {reference_id}"
+
         await conn.execute("""
             INSERT INTO tokens_log (user_id, change, source, description)
-            VALUES ($1, 1, 'square', $2)
-        """, user_id, f"Top-up via Square for {phone}")
+            VALUES ($1, $2, 'square', $3)
+        """, user_id, tokens_to_add, description)
 
         await conn.execute("""
-            UPDATE users SET tokens = tokens + 1 WHERE id = $1
-        """, user_id)
+            UPDATE users SET tokens_balance = tokens_balance + $1 WHERE id = $2
+        """, tokens_to_add, user_id)
 
         await conn.close()
-        return {"status": "ok", "message": "tokens added"}
+        return {"status": "ok", "tokens_added": tokens_to_add}
 
     except Exception as e:
         return {"status": "error", "details": f"DB error: {str(e)}"}
