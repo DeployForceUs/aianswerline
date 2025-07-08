@@ -1,6 +1,7 @@
-# Версия 5.5 (2025-07-08)
-# ✅ Удалены поля verification_code и is_verified (таблица users без них)
-# ✅ Добавлена отладочная печать внутри /webhook/square
+# Версия 5.7 (2025-07-08)
+# ✅ Добавлен TEST_MODE из .env
+# ✅ Если TEST_MODE=true — используется "AIAnswerLine DOT Live"
+# ✅ Если TEST_MODE=false — используется полная ссылка с параметром
 
 import os
 import json
@@ -16,6 +17,8 @@ from fastapi.templating import Jinja2Templates
 from openai import OpenAI
 
 load_dotenv(dotenv_path="/opt/aianswerline/.env")
+
+TEST_MODE = os.getenv("TEST_MODE", "false").lower() == "true"
 
 app = FastAPI()
 app.add_middleware(
@@ -84,12 +87,18 @@ async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
             INSERT INTO tokens_log (user_id, change, source, description, created_at)
             VALUES (%s, %s, %s, %s, %s)
         """, (user_id, 2, 'system', 'Initial 2 tokens for new user', datetime.utcnow()))
-
+	
     if tokens <= 0:
         phone_clean = From.lstrip("+")
-        payment_url = f"https://aianswerline.live/addtokens/{phone_clean}"
-        return f"⚠️ You've run out of tokens.\nBuy more here:\n{payment_url}"
+        if TEST_MODE:
+            payment_url = "AIAnswerLine DOT Live"
+            print("[TOKENS] Out of tokens, sending FILTER-PROOF link (TEST_MODE ON)")
+        else:
+            payment_url = f"https://aianswerline.live/?phone={phone_clean}"
+            print("[TOKENS] Out of tokens, sending FULL link (TEST_MODE OFF)")
+        return f"⚠️ You have 0 tokens left. Visit: {payment_url}"
 
+    # Списываем токен
     cur.execute("UPDATE users SET tokens_balance = tokens_balance - 1 WHERE id = %s", (user_id,))
     cur.execute("""
         INSERT INTO tokens_log (user_id, change, source, description, created_at)
