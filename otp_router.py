@@ -1,6 +1,9 @@
-# Версия 3.3 (2025-07-07)
-# ✅ bind_phone теперь возвращает полный профиль: email, phone, tokens
-# ✅ Полная логика: send_otp_email, verify_otp, bind_phone
+# Версия 3.8 (2025-07-07)
+# ✅ email обрабатываются без учёта регистра (LOWER)
+# ✅ verify_otp теперь правильно отслеживает: used, expired, invalid
+# ✅ attempts увеличивается при каждой ошибке кода
+# ✅ used теперь гарантированно обновляется и сохраняется в БД
+# ✅ В ответе добавлено поле `used` — отображение статуса кода
 # ✅ Используется только таблица users
 # ✅ email_otp — справочная таблица
 # ✅ При создании юзера: 0 токенов и запись времени
@@ -28,6 +31,7 @@ def get_db_conn():
 @router.post("/send_otp_email")
 async def send_otp_email(email: str = Form(...)):
     try:
+        email = email.lower()
         conn = get_db_conn()
         cur = conn.cursor()
 
@@ -60,25 +64,42 @@ async def send_otp_email(email: str = Form(...)):
 @router.post("/verify_otp")
 async def verify_otp(email: str = Form(...), code: str = Form(...)):
     try:
+        email = email.lower()
         conn = get_db_conn()
         cur = conn.cursor()
 
-        cur.execute("SELECT code, expires_at, used FROM email_otp WHERE email = %s ORDER BY id DESC LIMIT 1", (email,))
+        cur.execute("""
+            SELECT id, code, expires_at, used 
+            FROM email_otp 
+            WHERE LOWER(email) = LOWER(%s) 
+            ORDER BY id DESC 
+            LIMIT 1
+        """, (email,))
         row = cur.fetchone()
         if not row:
             return JSONResponse(status_code=400, content={"detail": "Email not found."})
 
-        db_code, expires, used = row
+        otp_id, db_code, expires, used = row
+
+        if db_code != code:
+            cur.execute("UPDATE email_otp SET attempts = attempts + 1 WHERE id = %s", (otp_id,))
+            conn.commit()
+            return JSONResponse(status_code=400, content={"detail": "Invalid code."})
+
         if used:
             return JSONResponse(status_code=400, content={"detail": "Code already used."})
-        if db_code != code:
-            return JSONResponse(status_code=400, content={"detail": "Invalid code."})
         if datetime.utcnow() > expires:
             return JSONResponse(status_code=400, content={"detail": "Code expired."})
 
-        cur.execute("UPDATE email_otp SET used = TRUE WHERE email = %s AND code = %s", (email, code))
+        # Обновляем статус used = TRUE и коммитим
+        cur.execute("UPDATE email_otp SET used = TRUE WHERE id = %s", (otp_id,))
+        conn.commit()  # 💥 Гарантированный коммит после used = TRUE
 
-        cur.execute("SELECT id, phone, tokens_balance FROM users WHERE email = %s", (email,))
+        cur.execute("""
+            SELECT id, phone, tokens_balance 
+            FROM users 
+            WHERE LOWER(email) = LOWER(%s)
+        """, (email,))
         user = cur.fetchone()
 
         if not user:
@@ -99,12 +120,12 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
             "linked": linked,
             "phone": phone,
             "email": email,
-            "tokens": tokens
+            "tokens": tokens,
+            "used": True
         })
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"detail": str(e)})
-
     finally:
         if conn:
             conn.close()
@@ -112,13 +133,14 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
 @router.post("/bind_phone")
 async def bind_phone(email: str = Form(...), phone: str = Form(...)):
     try:
+        email = email.lower()
         conn = get_db_conn()
         cur = conn.cursor()
 
-        cur.execute("UPDATE users SET phone = %s WHERE email = %s", (phone, email))
+        cur.execute("UPDATE users SET phone = %s WHERE LOWER(email) = LOWER(%s)", (phone, email))
         conn.commit()
 
-        cur.execute("SELECT tokens_balance FROM users WHERE email = %s", (email,))
+        cur.execute("SELECT tokens_balance FROM users WHERE LOWER(email) = LOWER(%s)", (email,))
         row = cur.fetchone()
         tokens = row[0] if row else 0
 
