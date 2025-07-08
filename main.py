@@ -1,6 +1,6 @@
-# Версия 5.4 (2025-07-08)
+# Версия 5.5 (2025-07-08)
+# ✅ Удалены поля verification_code и is_verified (таблица users без них)
 # ✅ Добавлена отладочная печать внутри /webhook/square
-# ✅ Мы видим всю входящую структуру до парсинга
 
 import os
 import json
@@ -75,9 +75,9 @@ async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
         user_id, tokens = row
     else:
         cur.execute("""
-            INSERT INTO users (phone, verification_code, is_verified, tokens_balance, created_at)
-            VALUES (%s, %s, %s, %s, %s) RETURNING id
-        """, (From, '000000', True, 2, datetime.utcnow()))
+            INSERT INTO users (phone, tokens_balance, created_at)
+            VALUES (%s, %s, %s) RETURNING id
+        """, (From, 2, datetime.utcnow()))
         user_id = cur.fetchone()[0]
         tokens = 2
         cur.execute("""

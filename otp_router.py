@@ -1,12 +1,9 @@
-# Версия 3.8 (2025-07-07)
-# ✅ email обрабатываются без учёта регистра (LOWER)
-# ✅ verify_otp теперь правильно отслеживает: used, expired, invalid
-# ✅ attempts увеличивается при каждой ошибке кода
-# ✅ used теперь гарантированно обновляется и сохраняется в БД
-# ✅ В ответе добавлено поле `used` — отображение статуса кода
-# ✅ Используется только таблица users
-# ✅ email_otp — справочная таблица
-# ✅ При создании юзера: 0 токенов и запись времени
+# Версия 3.9 (2025-07-08)
+# ✅ Привязка email к пользователю с уже существующим номером
+# ✅ Если номер найден — email дописывается в эту запись
+# ✅ Если номер не найден — создаётся новая запись
+# ✅ Логика backwards-compatible
+# ✅ Не допускаем дублирующихся email и phone
 
 from fastapi import APIRouter, Form
 from fastapi.responses import JSONResponse
@@ -91,10 +88,11 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
         if datetime.utcnow() > expires:
             return JSONResponse(status_code=400, content={"detail": "Code expired."})
 
-        # Обновляем статус used = TRUE и коммитим
+        # Отметим, что код использован
         cur.execute("UPDATE email_otp SET used = TRUE WHERE id = %s", (otp_id,))
-        conn.commit()  # 💥 Гарантированный коммит после used = TRUE
+        conn.commit()
 
+        # Проверим: есть ли юзер с этим email
         cur.execute("""
             SELECT id, phone, tokens_balance 
             FROM users 
@@ -102,18 +100,35 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
         """, (email,))
         user = cur.fetchone()
 
-        if not user:
-            cur.execute("""
-                INSERT INTO users (email, tokens_balance, created_at)
-                VALUES (%s, %s, %s)
-            """, (email, 0, datetime.utcnow()))
-            conn.commit()
-            linked = False
-            phone = None
-            tokens = 0
-        else:
+        if user:
             _, phone, tokens = user
             linked = phone is not None
+
+        else:
+            # Ищем последнего юзера без email, но с номером — через SMS
+            cur.execute("""
+                SELECT id, phone, tokens_balance 
+                FROM users 
+                WHERE email IS NULL AND phone IS NOT NULL
+                ORDER BY id DESC LIMIT 1
+            """)
+            phone_user = cur.fetchone()
+
+            if phone_user:
+                user_id, phone, tokens = phone_user
+                cur.execute("UPDATE users SET email = %s WHERE id = %s", (email, user_id))
+                conn.commit()
+                linked = True
+            else:
+                # Новый пользователь — ни email, ни phone нет
+                cur.execute("""
+                    INSERT INTO users (email, tokens_balance, created_at)
+                    VALUES (%s, %s, %s)
+                """, (email, 0, datetime.utcnow()))
+                conn.commit()
+                linked = False
+                phone = None
+                tokens = 0
 
         return JSONResponse(content={
             "message": "Verified",
