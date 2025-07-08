@@ -1,12 +1,11 @@
-# Версия 1.6 (2025-07-08)
-# ✅ Square требует {"order_id": ...} — окончательно исправлено!
+# Версия 1.9 (2025-07-08)
+# ✅ Square требует {"order": {"id": ...}} — реализовано
+# ✅ Используем reference_id вместо metadata
 # ✅ Прямой Redirect после успешной генерации ссылки
-# ✅ Добавлена отладочная печать SQUARE_LOCATION и TOKEN в журнал
-# ✅ Печать amount, phone, payload, и ссылки — для полного контроля
-# ✅ Добавлены custom_fields с телефоном (для извлечения в webhook)
+# ✅ Полный лог заказа и оплаты для отладки
 
 from fastapi.responses import JSONResponse, RedirectResponse
-from fastapi import APIRouter
+from fastapi import APIRouter, Form
 import os
 import uuid
 import httpx
@@ -22,8 +21,8 @@ SQUARE_LOCATION = os.getenv("SQUARE_LOCATION_ID")
 print(f"🔍 SQUARE_LOCATION = {SQUARE_LOCATION}")
 print(f"🔍 SQUARE_TOKEN    = {SQUARE_TOKEN[:8]}... (trimmed)")
 
-@router.get("/create_order_payment")
-async def create_order_payment(amount: int, phone: str):
+@router.post("/create_order_payment")
+async def create_order_payment(amount: int = Form(...), phone: str = Form(...)):
     order_idempotency_key = str(uuid.uuid4())
     payment_idempotency_key = f"{phone}-{amount}-{uuid.uuid4().hex[:6]}"
 
@@ -46,9 +45,7 @@ async def create_order_payment(amount: int, phone: str):
                     }
                 }
             ],
-            "metadata": {
-                "phone": phone
-            }
+            "reference_id": phone
         }
     }
 
@@ -74,7 +71,9 @@ async def create_order_payment(amount: int, phone: str):
 
         payment_payload = {
             "idempotency_key": payment_idempotency_key,
-            "order_id": order_id,
+            "order": {
+                "id": order_id
+            },
             "checkout_options": {
                 "redirect_url": "https://aianswerline.live",
                 "custom_fields": [
