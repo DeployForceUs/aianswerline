@@ -1,0 +1,32 @@
+body {
+  font-family: Arial, sans-serif;
+  padding: 40px;
+  background: #f9f9f9;
+  color: #333;
+}
+
+input, button {
+  padding: 10px;
+  font-size: 16px;
+  margin-top: 10px;
+  display: block;
+}
+
+.hidden {
+  display: none;
+}
+
+#token-options button {
+  margin: 5px;
+  min-width: 140px;
+}
+
+.phone-input-group {
+  display: flex;
+  align-items: center;
+}
+
+.phone-input-group span {
+  font-size: 18px;
+  margin-right: 8px;
+}

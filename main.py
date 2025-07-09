@@ -1,9 +1,7 @@
-# Версия 5.8 (2025-07-08)
-# ✅ Добавлен endpoint /complete-registration
-# ✅ Добавлена защита от дублирования email (email UNIQUE)
-# ✅ Если номер есть, email обновляется; если нет — создаётся новый пользователь
-# ✅ email не может быть NULL — используем пустую строку как признак отсутствия
-# ✅ Логика fallback-ссылки и TEST_MODE из версии 5.7 сохранена
+# Версия 5.9 (2025-07-08)
+# ✅ Добавлен app.mount("/static", ...) для раздачи CSS/JS
+# ✅ Структура осталась прежней, логика не изменена
+# ✅ Подключение static добавлено перед блоком с Jinja2Templates
 
 import os
 import json
@@ -16,6 +14,7 @@ from fastapi import FastAPI, Form, Request
 from fastapi.responses import PlainTextResponse, HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from openai import OpenAI
 
 load_dotenv(dotenv_path="/opt/aianswerline/.env")
@@ -89,7 +88,7 @@ async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
             INSERT INTO tokens_log (user_id, change, source, description, created_at)
             VALUES (%s, %s, %s, %s, %s)
         """, (user_id, 2, 'system', 'Initial 2 tokens for new user', datetime.utcnow()))
-	
+    
     if tokens <= 0:
         phone_clean = From.lstrip("+")
         if TEST_MODE:
@@ -196,6 +195,9 @@ async def square_webhook(request: Request):
     except Exception as e:
         print("[SQUARE ERROR]:", str(e))
         return {"status": "error", "details": f"webhook error: {str(e)}"}
+
+# === Static Files ===
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # === Landing Page ===
 templates = Jinja2Templates(directory="templates")
