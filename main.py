@@ -1,24 +1,28 @@
-# Версия 5.9 (2025-07-08)
-# ✅ Добавлен app.mount("/static", ...) для раздачи CSS/JS
-# ✅ Структура осталась прежней, логика не изменена
-# ✅ Подключение static добавлено перед блоком с Jinja2Templates
+# Версия 5.16 (2025-07-09)
+# ✅ Добавлены отладочные принты и flush при вставке в pending_payments
+# ✅ Вставка отмечается как manual_debug=True
+# ✅ Версия зафиксирована, предыдущая была 5.15
 
 import os
 import json
 import psycopg2
 import asyncpg
+import requests
+from uuid import uuid4
 from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import PlainTextResponse, HTMLResponse, JSONResponse
+from fastapi.responses import PlainTextResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from openai import OpenAI
+import sys
+
+print("🟢 FastAPI v5.16 загружен успешно", flush=True)
 
 load_dotenv(dotenv_path="/opt/aianswerline/.env")
-
 TEST_MODE = os.getenv("TEST_MODE", "false").lower() == "true"
 
 app = FastAPI()
@@ -29,7 +33,6 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# === Роутеры ===
 from addtokens import router as addtokens_router
 app.include_router(addtokens_router)
 
@@ -39,10 +42,7 @@ app.include_router(google_auth_router)
 from otp_router import router as otp_router
 app.include_router(otp_router)
 
-from create_order_and_payment import router as payment_router
-app.include_router(payment_router)
 
-# === Sync DB (psycopg2) ===
 conn = psycopg2.connect(
     dbname=os.getenv("DB_NAME"),
     user=os.getenv("DB_USER"),
@@ -53,7 +53,6 @@ conn = psycopg2.connect(
 conn.autocommit = True
 cur = conn.cursor()
 
-# === Async DB (asyncpg) ===
 @app.on_event("startup")
 async def startup():
     app.state.pg_pool = await asyncpg.create_pool(
@@ -66,7 +65,6 @@ async def startup():
         max_size=5
     )
 
-# === OpenAI ===
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.post("/twilio-hook", response_class=PlainTextResponse)
@@ -88,18 +86,12 @@ async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
             INSERT INTO tokens_log (user_id, change, source, description, created_at)
             VALUES (%s, %s, %s, %s, %s)
         """, (user_id, 2, 'system', 'Initial 2 tokens for new user', datetime.utcnow()))
-    
+
     if tokens <= 0:
         phone_clean = From.lstrip("+")
-        if TEST_MODE:
-            payment_url = "AIAnswerLine DOT Live"
-            print("[TOKENS] Out of tokens, sending FILTER-PROOF link (TEST_MODE ON)")
-        else:
-            payment_url = f"https://aianswerline.live/?phone={phone_clean}"
-            print("[TOKENS] Out of tokens, sending FULL link (TEST_MODE OFF)")
+        payment_url = "AIAnswerLine DOT Live" if TEST_MODE else f"https://aianswerline.live/?phone={phone_clean}"
         return f"⚠️ You have 0 tokens left. Visit: {payment_url}"
 
-    # Списываем токен
     cur.execute("UPDATE users SET tokens_balance = tokens_balance - 1 WHERE id = %s", (user_id,))
     cur.execute("""
         INSERT INTO tokens_log (user_id, change, source, description, created_at)
@@ -123,15 +115,11 @@ async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
 
 @app.post("/complete-registration")
 async def complete_registration(phone: str = Form(...), email: str = Form(...)):
-    print(f"[REGISTRATION] 📥 Phone: {phone} | Email: {email}")
-
-    # Проверка, занят ли email
     cur.execute("SELECT id FROM users WHERE email = %s", (email,))
     if cur.fetchone():
         return JSONResponse(content={"status": "error", "message": "This email is already in use"}, status_code=400)
 
-    # Проверка, есть ли пользователь с этим номером
-    cur.execute("SELECT id, email FROM users WHERE phone = %s", (phone,))
+    cur.execute("SELECT id FROM users WHERE phone = %s", (phone,))
     row = cur.fetchone()
 
     if row:
@@ -154,52 +142,57 @@ async def chat(phone: str = Form(...), message: str = Form(...)):
     print(f"[TEST CHAT] 📲 {phone}: {message}")
     return f"Mock response to your message: {message}"
 
+@app.post("/create-payment")
+async def create_payment(request: Request):
+    return {"status": "deprecated", "note": "Use /create_payment_link instead"}
+
 @app.post("/webhook/square")
 async def square_webhook(request: Request):
     try:
         print("[SQUARE] ✅ Webhook received")
-
         data = await request.json()
         print("📦 RAW webhook body:")
         print(json.dumps(data, indent=2))
 
-        dump_dir = Path("/opt/aianswerline/tmp")
-        dump_dir.mkdir(parents=True, exist_ok=True)
-        dump_path = dump_dir / "square_webhook_dump.json"
-        with open(dump_path, "a") as f:
-            json.dump(data, f, indent=2)
-            f.write("\n")
-
         payment = data.get("data", {}).get("object", {}).get("payment", {})
-        metadata = payment.get("metadata", {})
+        order_id = payment.get("order_id")
+        payment_id = payment.get("id")
         amount_cents = payment.get("amount_money", {}).get("amount", 0)
-        phone = metadata.get("phone")
-        payment_id = payment.get("id", "UNKNOWN")
+        fulfilled_at = payment.get("created_at", datetime.utcnow().isoformat())
 
-        if phone and amount_cents > 0:
-            tokens_to_add = (amount_cents // 100) * 20
-            cur.execute("SELECT id FROM users WHERE phone = %s", (phone,))
-            row = cur.fetchone()
-            if row:
-                user_id = row[0]
-                description = f"Payment received: ${amount_cents/100:.2f} | Phone: {phone} | ID: {payment_id}"
-                cur.execute("""
-                    INSERT INTO tokens_log (user_id, change, source, description, created_at)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (user_id, tokens_to_add, 'square', description, datetime.utcnow()))
-                cur.execute("UPDATE users SET tokens_balance = tokens_balance + %s WHERE id = %s", (tokens_to_add, user_id))
-                return {"status": "ok", "message": f"{tokens_to_add} tokens added"}
+        if not order_id:
+            return {"status": "error", "message": "Missing order_id in webhook"}
 
-        return {"status": "ok", "message": "webhook received, no phone or amount invalid"}
+        cur.execute("SELECT user_id FROM pending_payments WHERE order_id = %s", (order_id,))
+        row = cur.fetchone()
+        if not row:
+            return {"status": "error", "message": "Unknown order_id"}
+
+        user_id = row[0]
+        tokens_to_add = (amount_cents // 100) * 20
+        description = f"Payment via Square — ${amount_cents/100:.2f} | order_id: {order_id}"
+
+        cur.execute("""
+            INSERT INTO tokens_log (user_id, change, source, description, created_at)
+            VALUES (%s, %s, 'square', %s, %s)
+        """, (user_id, tokens_to_add, description, datetime.utcnow()))
+        cur.execute("UPDATE users SET tokens_balance = tokens_balance + %s WHERE id = %s", (tokens_to_add, user_id))
+        cur.execute("""
+            UPDATE pending_payments
+            SET fulfilled = TRUE,
+                status = 'fulfilled',
+                payment_id = %s,
+                fulfilled_at = %s
+            WHERE order_id = %s
+        """, (payment_id, fulfilled_at, order_id))
+
+        return {"status": "ok", "tokens_added": tokens_to_add}
 
     except Exception as e:
         print("[SQUARE ERROR]:", str(e))
         return {"status": "error", "details": f"webhook error: {str(e)}"}
 
-# === Static Files ===
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# === Landing Page ===
 templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)

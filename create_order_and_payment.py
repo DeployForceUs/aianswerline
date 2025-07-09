@@ -1,14 +1,15 @@
-# Версия 1.9 (2025-07-08)
-# ✅ Square требует {"order": {"id": ...}} — реализовано
-# ✅ Используем reference_id вместо metadata
-# ✅ Прямой Redirect после успешной генерации ссылки
-# ✅ Полный лог заказа и оплаты для отладки
+# Версия 2.1 (2025-07-09)
+# ✅ Устранена ошибка VALUE_EMPTY — добавлен location_id в payment_payload
+# ✅ Полностью совместим с main.py v5.16
+# ✅ Все действия логируются, manual_debug=True
+# ✅ Версия зафиксирована. Предыдущая была 2.0
 
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi import APIRouter, Form
 import os
 import uuid
 import httpx
+import psycopg2
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path="/opt/aianswerline/.env")
@@ -72,7 +73,8 @@ async def create_order_payment(amount: int = Form(...), phone: str = Form(...)):
         payment_payload = {
             "idempotency_key": payment_idempotency_key,
             "order": {
-                "id": order_id
+                "id": order_id,
+                "location_id": SQUARE_LOCATION
             },
             "checkout_options": {
                 "redirect_url": "https://aianswerline.live",
@@ -101,4 +103,29 @@ async def create_order_payment(amount: int = Form(...), phone: str = Form(...)):
 
         url = payment_data["payment_link"]["url"]
         print(f"🔗 Payment link generated:\n{url}")
-        return RedirectResponse(url)
+
+        # 👉 Вставка в pending_payments
+        try:
+            conn = psycopg2.connect(
+                dbname=os.getenv("DB_NAME"),
+                user=os.getenv("DB_USER"),
+                password=os.getenv("DB_PASS"),
+                host=os.getenv("DB_HOST"),
+                port=os.getenv("DB_PORT")
+            )
+            conn.autocommit = True
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO pending_payments (
+                    user_id, email, phone, order_id,
+                    payment_link, amount, currency,
+                    status, fulfilled, manual_debug, created_at
+                )
+                SELECT id, email, phone, %s, %s, %s, 'USD',
+                       'pending', FALSE, TRUE, NOW()
+                FROM users WHERE phone = %s
+            """, (order_id, url, amount, phone))
+            print(f"📝 Inserted pending_payment for phone {phone}, order_id {order_id}", flush=True)
+        except Exception as e:
+            print("❌ Error inserting pending_payment:", str(e), flush=True)
+

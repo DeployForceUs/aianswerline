@@ -1,11 +1,9 @@
-# Версия 1.7 (2025-07-09)
-# ✅ Расширенная вставка в pending_payments со всеми ключевыми полями
-# ✅ Запись полной square_response
-# ✅ Логгирование всех этапов
+	# Версия 1.6 (2025-07-09)
+# ✅ Добавлен insert в таблицу pending_payments перед редиректом
+# ✅ Логгирование вставки и ошибок через logging
 
 import os
 import uuid
-import json
 import httpx
 import psycopg2
 import logging
@@ -13,6 +11,7 @@ from datetime import datetime
 from fastapi import APIRouter
 from fastapi.responses import RedirectResponse
 
+# Настройка логов
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s"
@@ -55,14 +54,11 @@ async def create_payment_link(amount: int, phone: str):
                 }
             }
         )
-
         data = response.json()
         url = data["payment_link"]["url"]
-        order_id = data["payment_link"]["id"]
-        square_response = json.dumps(data)
-        metadata = json.dumps({"phone": phone})
 
-        logging.info(f"📌 Вставка в pending_payments: phone={phone}, amount={amount}, url={url}, order_id={order_id}")
+        # Лог перед вставкой
+        logging.info(f"📌 Вставка в pending_payments: phone={phone}, amount={amount}, url={url}")
 
         try:
             conn = psycopg2.connect(
@@ -73,20 +69,9 @@ async def create_payment_link(amount: int, phone: str):
             )
             cur = conn.cursor()
             cur.execute("""
-                INSERT INTO pending_payments (
-                    user_id, email, phone, order_id, payment_id,
-                    payment_link, amount, currency, status, fulfilled,
-                    metadata, square_response, created_at, fulfilled_at
-                )
-                VALUES (
-                    NULL, NULL, %s, %s, NULL,
-                    %s, %s, 'USD', 'pending', false,
-                    %s, %s, %s, NULL
-                )
-            """, (
-                phone, order_id, url, amount,
-                metadata, square_response, datetime.utcnow()
-            ))
+                INSERT INTO pending_payments (phone, amount, created_at, payment_link)
+                VALUES (%s, %s, %s, %s)
+            """, (phone, amount, datetime.utcnow(), url))
             conn.commit()
             cur.close()
             conn.close()
