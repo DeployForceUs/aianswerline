@@ -1,8 +1,6 @@
-# Версия 2.4 (2025-07-10)
-# ✅ Переведён с POST на GET (CORS больше не нужен)
-# ✅ Поддержка amount и phone через query-параметры
-# ✅ Возвращает Redirect 302 напрямую
-# ✅ Вся логика и запись в БД остаётся прежней
+# Версия 2.5 (2025-07-10)
+# ✅ Вставка в pending_payments теперь использует order_id из payment_link (а не из order_response)
+# ✅ Исправлен баг матчинга с Webhook по order_id
 
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi import APIRouter, Request
@@ -71,8 +69,6 @@ async def create_order_payment(request: Request):
         if order_resp.status_code != 200 or "order" not in order_data:
             return JSONResponse({"error": "Order creation failed", "raw": order_data}, status_code=500)
 
-        order_id = order_data["order"]["id"]
-
         payment_payload = {
             "idempotency_key": payment_idempotency_key,
             "order": {
@@ -114,6 +110,7 @@ async def create_order_payment(request: Request):
 
         url = payment_data["payment_link"]["url"]
         payment_link_id = payment_data["payment_link"]["id"]
+        order_id = payment_data["payment_link"]["order_id"]
         print(f"🔗 Payment link generated:\n{url} (id = {payment_link_id})")
 
         try:

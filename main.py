@@ -1,7 +1,7 @@
-# Версия 5.16 (2025-07-09)
-# ✅ Добавлены отладочные принты и flush при вставке в pending_payments
-# ✅ Вставка отмечается как manual_debug=True
-# ✅ Версия зафиксирована, предыдущая была 5.15
+# Версия 5.17 (2025-07-10)
+# ✅ Подключён маршрут create_order_and_payment
+# ✅ Остальной код не изменён
+# ✅ Восстановлена работа /create_order_payment
 
 import os
 import json
@@ -20,7 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from openai import OpenAI
 import sys
 
-print("🟢 FastAPI v5.16 загружен успешно", flush=True)
+print("🟢 FastAPI v5.17 загружен успешно", flush=True)
 
 load_dotenv(dotenv_path="/opt/aianswerline/.env")
 TEST_MODE = os.getenv("TEST_MODE", "false").lower() == "true"
@@ -42,6 +42,8 @@ app.include_router(google_auth_router)
 from otp_router import router as otp_router
 app.include_router(otp_router)
 
+from create_order_and_payment import router as payment_router
+app.include_router(payment_router)
 
 conn = psycopg2.connect(
     dbname=os.getenv("DB_NAME"),
