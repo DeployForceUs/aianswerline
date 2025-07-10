@@ -1,11 +1,11 @@
-# Версия 2.1 (2025-07-09)
-# ✅ Устранена ошибка VALUE_EMPTY — добавлен location_id в payment_payload
-# ✅ Полностью совместим с main.py v5.16
-# ✅ Все действия логируются, manual_debug=True
-# ✅ Версия зафиксирована. Предыдущая была 2.0
+# Версия 2.4 (2025-07-10)
+# ✅ Переведён с POST на GET (CORS больше не нужен)
+# ✅ Поддержка amount и phone через query-параметры
+# ✅ Возвращает Redirect 302 напрямую
+# ✅ Вся логика и запись в БД остаётся прежней
 
 from fastapi.responses import JSONResponse, RedirectResponse
-from fastapi import APIRouter, Form
+from fastapi import APIRouter, Request
 import os
 import uuid
 import httpx
@@ -22,8 +22,14 @@ SQUARE_LOCATION = os.getenv("SQUARE_LOCATION_ID")
 print(f"🔍 SQUARE_LOCATION = {SQUARE_LOCATION}")
 print(f"🔍 SQUARE_TOKEN    = {SQUARE_TOKEN[:8]}... (trimmed)")
 
-@router.post("/create_order_payment")
-async def create_order_payment(amount: int = Form(...), phone: str = Form(...)):
+@router.get("/create_order_payment")
+async def create_order_payment(request: Request):
+    try:
+        phone = request.query_params["phone"]
+        amount = int(request.query_params["amount"])
+    except Exception as e:
+        return JSONResponse({"error": "Invalid parameters", "detail": str(e)}, status_code=400)
+
     order_idempotency_key = str(uuid.uuid4())
     payment_idempotency_key = f"{phone}-{amount}-{uuid.uuid4().hex[:6]}"
 
@@ -63,18 +69,24 @@ async def create_order_payment(amount: int = Form(...), phone: str = Form(...)):
         print(f"📥 Order response [{order_resp.status_code}]:\n{order_data}")
 
         if order_resp.status_code != 200 or "order" not in order_data:
-            return JSONResponse({
-                "error": "Order creation failed",
-                "raw": order_data
-            }, status_code=500)
+            return JSONResponse({"error": "Order creation failed", "raw": order_data}, status_code=500)
 
         order_id = order_data["order"]["id"]
 
         payment_payload = {
             "idempotency_key": payment_idempotency_key,
             "order": {
-                "id": order_id,
-                "location_id": SQUARE_LOCATION
+                "location_id": SQUARE_LOCATION,
+                "line_items": [
+                    {
+                        "name": "Token Purchase",
+                        "quantity": "1",
+                        "base_price_money": {
+                            "amount": amount * 100,
+                            "currency": "USD"
+                        }
+                    }
+                ]
             },
             "checkout_options": {
                 "redirect_url": "https://aianswerline.live",
@@ -87,6 +99,8 @@ async def create_order_payment(amount: int = Form(...), phone: str = Form(...)):
             }
         }
 
+        print(f"💳 Sending payment_payload:\n{payment_payload}")
+
         payment_resp = await client.post(
             "https://connect.squareup.com/v2/online-checkout/payment-links",
             headers=headers,
@@ -96,15 +110,12 @@ async def create_order_payment(amount: int = Form(...), phone: str = Form(...)):
         print(f"💳 Payment response [{payment_resp.status_code}]:\n{payment_data}")
 
         if payment_resp.status_code != 200 or "payment_link" not in payment_data:
-            return JSONResponse({
-                "error": "No payment link returned",
-                "raw": payment_data
-            }, status_code=500)
+            return JSONResponse({"error": "No payment link returned", "raw": payment_data}, status_code=500)
 
         url = payment_data["payment_link"]["url"]
-        print(f"🔗 Payment link generated:\n{url}")
+        payment_link_id = payment_data["payment_link"]["id"]
+        print(f"🔗 Payment link generated:\n{url} (id = {payment_link_id})")
 
-        # 👉 Вставка в pending_payments
         try:
             conn = psycopg2.connect(
                 dbname=os.getenv("DB_NAME"),
@@ -118,14 +129,19 @@ async def create_order_payment(amount: int = Form(...), phone: str = Form(...)):
             cur.execute("""
                 INSERT INTO pending_payments (
                     user_id, email, phone, order_id,
-                    payment_link, amount, currency,
-                    status, fulfilled, manual_debug, created_at
+                    payment_link, payment_link_id, amount,
+                    currency, status, fulfilled, created_at
                 )
-                SELECT id, email, phone, %s, %s, %s, 'USD',
-                       'pending', FALSE, TRUE, NOW()
+                SELECT id, email, phone, %s, %s, %s, %s,
+                       'USD', 'pending', FALSE, NOW()
                 FROM users WHERE phone = %s
-            """, (order_id, url, amount, phone))
+            """, (order_id, url, payment_link_id, amount, phone))
             print(f"📝 Inserted pending_payment for phone {phone}, order_id {order_id}", flush=True)
         except Exception as e:
-            print("❌ Error inserting pending_payment:", str(e), flush=True)
+            print(f"❌ Error inserting pending_payment for {phone}:\n{str(e)}", flush=True)
+            return JSONResponse({
+                "error": "Database insert failed",
+                "detail": str(e)
+            }, status_code=500)
 
+    return RedirectResponse(url=url, status_code=302)
