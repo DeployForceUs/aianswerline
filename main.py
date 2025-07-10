@@ -205,3 +205,7 @@ templates = Jinja2Templates(directory="templates")
 @app.get("/", response_class=HTMLResponse)
 async def serve_landing(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/after_payment", response_class=HTMLResponse)
+async def after_payment(request: Request):
+    return templates.TemplateResponse("after_payment.html", {"request": request})

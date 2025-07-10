@@ -69,33 +69,23 @@ async def create_order_payment(amount: int = Form(...), phone: str = Form(...)):
 
         order_id = order_data["order"]["id"]
 
-    # ➕ Вставка в pending_payments
-    import psycopg2, datetime
-    conn = psycopg2.connect(
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASS"),
-        host=os.getenv("DB_HOST"),
-        port=os.getenv("DB_PORT")
-    )
-    conn.autocommit = True
-    cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO pending_payments (phone, order_id, amount, currency, status, fulfilled, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-    """, (phone, order_id, amount, 'USD', 'pending', False, datetime.datetime.utcnow()))
-
-
-        payment_resp = await client.post(
         payment_payload = {
             "idempotency_key": payment_idempotency_key,
-            "order": { "id": order_id },
-            "checkout_options": {
-                "redirect_url": "https://aianswerline.live/after_payment",
-                "custom_fields": [{"title": "Phone", "value": phone}]
+            "order": {
+                "id": order_id
             },
-            "metadata": { "order_id": order_id, "phone": phone }
+            "checkout_options": {
+                "redirect_url": "https://aianswerline.live",
+                "custom_fields": [
+                    {
+                        "title": "Phone",
+                        "value": phone
+                    }
+                ]
+            }
         }
+
+        payment_resp = await client.post(
             "https://connect.squareup.com/v2/online-checkout/payment-links",
             headers=headers,
             json=payment_payload
