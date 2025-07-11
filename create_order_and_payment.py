@@ -1,6 +1,5 @@
-# Версия 2.5 (2025-07-10)
-# ✅ Вставка в pending_payments теперь использует order_id из payment_link (а не из order_response)
-# ✅ Исправлен баг матчинга с Webhook по order_id
+# Версия 2.6 (2025-07-11)
+# ✅ Вставка в pending_payments теперь с расширенным логированием
 
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi import APIRouter, Request
@@ -26,6 +25,7 @@ async def create_order_payment(request: Request):
         phone = request.query_params["phone"]
         amount = int(request.query_params["amount"])
     except Exception as e:
+        print(f"❌ Invalid parameters: {str(e)}", flush=True)
         return JSONResponse({"error": "Invalid parameters", "detail": str(e)}, status_code=400)
 
     order_idempotency_key = str(uuid.uuid4())
@@ -54,7 +54,7 @@ async def create_order_payment(request: Request):
         }
     }
 
-    print(f"📤 Creating order for ${amount}, phone: {phone}")
+    print(f"\n📤 [STEP 1] Creating order for ${amount}, phone: {phone}")
     print(f"📤 Payload:\n{order_payload}")
 
     async with httpx.AsyncClient() as client:
@@ -67,6 +67,7 @@ async def create_order_payment(request: Request):
         print(f"📥 Order response [{order_resp.status_code}]:\n{order_data}")
 
         if order_resp.status_code != 200 or "order" not in order_data:
+            print("❌ Order creation failed")
             return JSONResponse({"error": "Order creation failed", "raw": order_data}, status_code=500)
 
         payment_payload = {
@@ -95,7 +96,8 @@ async def create_order_payment(request: Request):
             }
         }
 
-        print(f"💳 Sending payment_payload:\n{payment_payload}")
+        print(f"\n💳 [STEP 2] Creating payment link for order...")
+        print(f"💳 Payment payload:\n{payment_payload}")
 
         payment_resp = await client.post(
             "https://connect.squareup.com/v2/online-checkout/payment-links",
@@ -106,14 +108,16 @@ async def create_order_payment(request: Request):
         print(f"💳 Payment response [{payment_resp.status_code}]:\n{payment_data}")
 
         if payment_resp.status_code != 200 or "payment_link" not in payment_data:
+            print("❌ No payment link returned")
             return JSONResponse({"error": "No payment link returned", "raw": payment_data}, status_code=500)
 
         url = payment_data["payment_link"]["url"]
         payment_link_id = payment_data["payment_link"]["id"]
         order_id = payment_data["payment_link"]["order_id"]
-        print(f"🔗 Payment link generated:\n{url} (id = {payment_link_id})")
+        print(f"🔗 Payment link:\n{url}\n🔑 PaymentLinkID: {payment_link_id}, OrderID: {order_id}")
 
         try:
+            print(f"\n🗄 [STEP 3] Connecting to DB for INSERT pending_payment...")
             conn = psycopg2.connect(
                 dbname=os.getenv("DB_NAME"),
                 user=os.getenv("DB_USER"),
@@ -123,7 +127,7 @@ async def create_order_payment(request: Request):
             )
             conn.autocommit = True
             cur = conn.cursor()
-            cur.execute("""
+            insert_query = """
                 INSERT INTO pending_payments (
                     user_id, email, phone, order_id,
                     payment_link, payment_link_id, amount,
@@ -132,13 +136,14 @@ async def create_order_payment(request: Request):
                 SELECT id, email, phone, %s, %s, %s, %s,
                        'USD', 'pending', FALSE, NOW()
                 FROM users WHERE phone = %s
-            """, (order_id, url, payment_link_id, amount, phone))
-            print(f"📝 Inserted pending_payment for phone {phone}, order_id {order_id}", flush=True)
+            """
+            print(f"📝 SQL:\n{insert_query}")
+            print(f"📝 VALUES:\norder_id={order_id}, url={url}, payment_link_id={payment_link_id}, amount={amount}, phone={phone}")
+            cur.execute(insert_query, (order_id, url, payment_link_id, amount, phone))
+            print(f"✅ Insert successful for phone {phone}")
         except Exception as e:
-            print(f"❌ Error inserting pending_payment for {phone}:\n{str(e)}", flush=True)
-            return JSONResponse({
-                "error": "Database insert failed",
-                "detail": str(e)
-            }, status_code=500)
+            print(f"❌ Database insert error for phone {phone}:\n{str(e)}", flush=True)
+            return JSONResponse({"error": "Database insert failed", "detail": str(e)}, status_code=500)
 
+    print("🏁 DONE — redirecting to payment link...")
     return RedirectResponse(url=url, status_code=302)

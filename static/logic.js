@@ -72,6 +72,6 @@ function showDashboard(email, phone, tokens) {
 
 function buyTokens(amount) {
   const phone = document.getElementById("dashboard-phone").innerText.trim();
-  const url = `/create_payment_link?amount=${amount}&phone=${encodeURIComponent(phone)}`;
+  const url = `/create_order_payment?amount=${amount}&phone=${encodeURIComponent(phone)}`;
   window.location.href = url;
 }
