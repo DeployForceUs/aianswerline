@@ -1,15 +1,14 @@
-# Версия 4.0 (2025-07-11)
-# ✅ Логика регистрации перенесена в bind_phone
-# ✅ verify_otp только помечает OTP как использованный
-# ✅ bind_phone делает всё: логин, привязка, создание
-# ✅ Избегаем дублей: ни email, ни phone больше не создаются отдельно
+# Версия 4.1 (2025-07-11)
+# ✅ Email НЕ создаётся в users на этапе verify
+# ✅ Только bind_phone может создать или привязать юзера
+# ✅ Логика строго разделена: код — потом телефон — потом юзер
 
 from fastapi import APIRouter, Form
 from fastapi.responses import JSONResponse
 import psycopg2
 import os
 from datetime import datetime, timedelta
-from send_email import send_email  # 📤 импорт функции отправки письма
+from send_email import send_email
 
 router = APIRouter()
 
@@ -31,7 +30,7 @@ async def send_otp_email(email: str = Form(...)):
         conn = get_db_conn()
         cur = conn.cursor()
 
-        code = str(int(datetime.utcnow().timestamp()))[-6:]  # псевдо-OTP
+        code = str(int(datetime.utcnow().timestamp()))[-6:]
         now = datetime.utcnow()
         expires = now + timedelta(minutes=5)
 
@@ -43,8 +42,8 @@ async def send_otp_email(email: str = Form(...)):
 
         subject = "Your AI AnswerLine OTP Code"
         html_body = f"<h3>Your code:</h3><p><b>{code}</b></p><p>Expires in 5 minutes.</p>"
-
         status_code, response = send_email(email, subject, html_body)
+
         if status_code not in (200, 202):
             return JSONResponse(status_code=500, content={"detail": f"Email send failed: {response}"})
 
@@ -52,6 +51,7 @@ async def send_otp_email(email: str = Form(...)):
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"detail": str(e)})
+
     finally:
         if conn:
             conn.close()
@@ -66,7 +66,7 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
         cur.execute("""
             SELECT id, code, expires_at, used 
             FROM email_otp 
-            WHERE LOWER(email) = LOWER(%s)
+            WHERE LOWER(email) = LOWER(%s) 
             ORDER BY id DESC LIMIT 1
         """, (email,))
         row = cur.fetchone()
@@ -88,7 +88,7 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
         cur.execute("UPDATE email_otp SET used = TRUE WHERE id = %s", (otp_id,))
         conn.commit()
 
-        return JSONResponse(content={"message": "OTP verified", "otp_verified": True})
+        return JSONResponse(content={"message": "Verified", "used": True})
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"detail": str(e)})
@@ -103,56 +103,59 @@ async def bind_phone(email: str = Form(...), phone: str = Form(...)):
         conn = get_db_conn()
         cur = conn.cursor()
 
-        # Сначала проверим, есть ли уже такой пользователь по email
-        cur.execute("SELECT id, phone, tokens_balance FROM users WHERE LOWER(email) = LOWER(%s)", (email,))
-        user = cur.fetchone()
-        if user:
-            _, phone_db, tokens = user
-            return JSONResponse(content={
-                "message": "Logged in",
-                "linked": True,
-                "phone": phone_db,
-                "email": email,
-                "tokens": tokens
-            })
-
-        # Ищем по номеру запись без email
+        # Проверим, подтвержден ли OTP для этого email
         cur.execute("""
-            SELECT id, tokens_balance FROM users 
-            WHERE phone = %s AND email IS NULL
+            SELECT used FROM email_otp
+            WHERE LOWER(email) = LOWER(%s)
             ORDER BY id DESC LIMIT 1
-        """, (phone,))
-        phone_user = cur.fetchone()
-        if phone_user:
-            user_id, tokens = phone_user
-            cur.execute("UPDATE users SET email = %s WHERE id = %s", (email, user_id))
-            conn.commit()
-            return JSONResponse(content={
-                "message": "Email linked to existing phone",
-                "linked": True,
-                "phone": phone,
-                "email": email,
-                "tokens": tokens
-            })
+        """, (email,))
+        otp_row = cur.fetchone()
+        if not otp_row or not otp_row[0]:
+            return JSONResponse(status_code=400, content={"detail": "OTP not verified"})
 
-        # Новый пользователь
-        now = datetime.utcnow()
+        # Есть ли уже связка email+phone?
         cur.execute("""
-            INSERT INTO users (email, phone, tokens_balance, created_at)
-            VALUES (%s, %s, 0, %s)
-        """, (email, phone, now))
-        conn.commit()
+            SELECT tokens_balance FROM users
+            WHERE LOWER(email) = LOWER(%s) AND phone = %s
+        """, (email, phone))
+        match = cur.fetchone()
+
+        if match:
+            tokens = match[0]
+            linked = True
+
+        else:
+            # Есть ли пользователь с этим телефоном без email?
+            cur.execute("""
+                SELECT id, tokens_balance FROM users
+                WHERE phone = %s AND email IS NULL
+            """, (phone,))
+            phone_only = cur.fetchone()
+
+            if phone_only:
+                user_id, tokens = phone_only
+                cur.execute("UPDATE users SET email = %s WHERE id = %s", (email, user_id))
+                linked = True
+            else:
+                cur.execute("""
+                    INSERT INTO users (email, phone, tokens_balance, created_at)
+                    VALUES (%s, %s, 0, %s)
+                """, (email, phone, datetime.utcnow()))
+                tokens = 0
+                linked = False
+            conn.commit()
 
         return JSONResponse(content={
-            "message": "New user created",
-            "linked": True,
+            "message": "Verified",
+            "linked": linked,
             "phone": phone,
             "email": email,
-            "tokens": 0
+            "tokens": tokens
         })
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"detail": str(e)})
+
     finally:
         if conn:
             conn.close()
