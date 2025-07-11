@@ -1,8 +1,12 @@
+/* Версия 4.2 (2025-07-11)
+🌌 AI Visual Refresh: градиент, стекло, неон
+*/
+
 body {
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   padding: 40px;
-  background: #f9f9f9;
-  color: #333;
+  background: linear-gradient(135deg, #1e1e2f, #2d2d44);
+  color: #ffffff;
 }
 
 input, button {
@@ -10,6 +14,32 @@ input, button {
   font-size: 16px;
   margin-top: 10px;
   display: block;
+  border: none;
+  border-radius: 8px;
+  backdrop-filter: blur(6px);
+}
+
+input {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+input::placeholder {
+  color: #bbb;
+}
+
+button {
+  background: rgba(255, 255, 255, 0.08);
+  color: #00ffff;
+  border: 1px solid #00ffff;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+
+button:hover {
+  background: rgba(0, 255, 255, 0.2);
+  transform: scale(1.03);
 }
 
 .hidden {
@@ -19,6 +49,16 @@ input, button {
 #token-options button {
   margin: 5px;
   min-width: 140px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  border: 1px solid #888;
+  transition: all 0.3s ease;
+}
+
+#token-options button:hover {
+  background: #00ffff;
+  color: #000;
+  border-color: #00ffff;
 }
 
 .phone-input-group {
@@ -29,4 +69,5 @@ input, button {
 .phone-input-group span {
   font-size: 18px;
   margin-right: 8px;
+  color: #ccc;
 }

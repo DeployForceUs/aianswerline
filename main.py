@@ -1,7 +1,7 @@
-# Версия 5.17 (2025-07-10)
-# ✅ Подключён маршрут create_order_and_payment
-# ✅ Остальной код не изменён
-# ✅ Восстановлена работа /create_order_payment
+# Версия 5.18 (2025-07-11)
+# ✅ build_id для автообновления static-файлов (styles.css и logic.js)
+# ✅ Восстановлены все mount, routers, логика / и webhook
+# ✅ Сохранено всё, что было в версии 5.17
 
 import os
 import json
@@ -20,7 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from openai import OpenAI
 import sys
 
-print("🟢 FastAPI v5.17 загружен успешно", flush=True)
+print("🟢 FastAPI v5.18 загружен успешно", flush=True)
 
 load_dotenv(dotenv_path="/opt/aianswerline/.env")
 TEST_MODE = os.getenv("TEST_MODE", "false").lower() == "true"
@@ -199,4 +199,8 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_landing(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    build_id = datetime.utcnow().strftime("%Y%m%d%H%M")
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "build_id": build_id
+    })

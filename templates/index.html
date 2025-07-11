@@ -1,13 +1,14 @@
-<!-- Версия 4.0 (2025-07-08)
-🎨 Вынесены стили в styles.css
-🧠 Логика вынесена в logic.js
+<!-- Версия 4.1 (2025-07-11)
+🎨 Версия logic.js и styles.css теперь подставляется динамически через build_id
+🧠 Удалены захардкоженные ?v= параметры
 -->
+
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <title>AI AnswerLine</title>
-  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/styles.css?{{ build_id }}">
 </head>
 <body>
 
@@ -47,6 +48,6 @@
     </div>
   </div>
 
-  <script src="/static/logic.js?v40"></script>
+  <script src="/static/logic.js?{{ build_id }}"></script>
 </body>
 </html>
