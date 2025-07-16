@@ -1,7 +1,9 @@
-# Версия 5.18 (2025-07-11)
-# ✅ build_id для автообновления static-файлов (styles.css и logic.js)
-# ✅ Восстановлены все mount, routers, логика / и webhook
-# ✅ Сохранено всё, что было в версии 5.17
+# Версия 5.19 (2025-07-15)
+# ✅ Добавлено поле phone в таблицу email_otp
+# ✅ Обновлён /verify_email_otp — теперь принимает и сохраняет phone
+# ✅ Добавлен эндпоинт /link_phone — обновляет phone в строке с used = true
+# ✅ Поддержка полной регистрации на основе связки email + phone
+# ✅ Сохранил всю логику из v5.18
 
 import os
 import json
@@ -20,7 +22,7 @@ from fastapi.staticfiles import StaticFiles
 from openai import OpenAI
 import sys
 
-print("🟢 FastAPI v5.18 загружен успешно", flush=True)
+print("🟢 FastAPI v5.19 загружен успешно", flush=True)
 
 load_dotenv(dotenv_path="/opt/aianswerline/.env")
 TEST_MODE = os.getenv("TEST_MODE", "false").lower() == "true"
@@ -69,6 +71,60 @@ async def startup():
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+@app.post("/verify_email_otp")
+async def verify_email_otp(email: str = Form(...), code: str = Form(...), phone: str = Form(None)):
+    cur.execute("""
+        SELECT id, expires_at, used FROM email_otp
+        WHERE email = %s AND code = %s
+        ORDER BY id DESC LIMIT 1
+    """, (email, code))
+    row = cur.fetchone()
+
+    if not row:
+        return JSONResponse(content={"status": "error", "message": "Code not found"}, status_code=404)
+
+    otp_id, expires_at, used = row
+    if used:
+        return JSONResponse(content={"status": "error", "message": "Code already used"}, status_code=400)
+
+    if expires_at < datetime.utcnow():
+        return JSONResponse(content={"status": "error", "message": "Code expired"}, status_code=400)
+
+    cur.execute("UPDATE email_otp SET used = TRUE, phone = %s WHERE id = %s", (phone, otp_id))
+    return {"status": "ok", "message": "OTP verified", "otp_id": otp_id}
+
+@app.post("/link_phone")
+async def link_phone(code: str = Form(...), phone: str = Form(...)):
+    cur.execute("""
+        UPDATE email_otp
+        SET phone = %s
+        WHERE code = %s AND used = TRUE AND phone IS NULL
+        RETURNING id
+    """, (phone, code))
+    row = cur.fetchone()
+    if row:
+        return {"status": "ok", "message": "Phone linked to verified OTP"}
+    return JSONResponse(content={"status": "error", "message": "No matching verified code"}, status_code=404)
+
+@app.post("/complete-registration")
+async def complete_registration(phone: str = Form(...), email: str = Form(...)):
+    cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+    if cur.fetchone():
+        return JSONResponse(content={"status": "error", "message": "This email is already in use"}, status_code=400)
+
+    cur.execute("SELECT id FROM users WHERE phone = %s", (phone,))
+    row = cur.fetchone()
+
+    if row:
+        cur.execute("UPDATE users SET email = %s WHERE phone = %s", (email, phone))
+        return {"status": "ok", "message": "Email linked to existing user"}
+    else:
+        cur.execute("""
+            INSERT INTO users (phone, email, tokens_balance, created_at)
+            VALUES (%s, %s, %s, %s)
+        """, (phone, email, 0, datetime.utcnow()))
+        return {"status": "ok", "message": "New user created with email"}
+
 @app.post("/twilio-hook", response_class=PlainTextResponse)
 async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
     print(f"[Twilio SMS] 📩 From {From}: {Body}")
@@ -114,25 +170,6 @@ async def twilio_hook(From: str = Form(...), Body: str = Form(...)):
         gpt_response = "Sorry, there was an error generating a response."
 
     return gpt_response
-
-@app.post("/complete-registration")
-async def complete_registration(phone: str = Form(...), email: str = Form(...)):
-    cur.execute("SELECT id FROM users WHERE email = %s", (email,))
-    if cur.fetchone():
-        return JSONResponse(content={"status": "error", "message": "This email is already in use"}, status_code=400)
-
-    cur.execute("SELECT id FROM users WHERE phone = %s", (phone,))
-    row = cur.fetchone()
-
-    if row:
-        cur.execute("UPDATE users SET email = %s WHERE phone = %s", (email, phone))
-        return {"status": "ok", "message": "Email linked to existing user"}
-    else:
-        cur.execute("""
-            INSERT INTO users (phone, email, tokens_balance, created_at)
-            VALUES (%s, %s, %s, %s)
-        """, (phone, email, 0, datetime.utcnow()))
-        return {"status": "ok", "message": "New user created with email"}
 
 @app.post("/twilio-status")
 async def twilio_status(status_data: dict):
