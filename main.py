@@ -1,9 +1,10 @@
-# Версия 5.19 (2025-07-15)
+# Версия 5.20 (2025-07-15)
 # ✅ Добавлено поле phone в таблицу email_otp
 # ✅ Обновлён /verify_email_otp — теперь принимает и сохраняет phone
 # ✅ Добавлен эндпоинт /link_phone — обновляет phone в строке с used = true
 # ✅ Поддержка полной регистрации на основе связки email + phone
-# ✅ Сохранил всю логику из v5.18
+# ✅ Новый эндпоинт /clean_expired_otp — удаляет просроченные неиспользованные строки
+# ✅ Сохранил всю логику из v5.19
 
 import os
 import json
@@ -22,7 +23,7 @@ from fastapi.staticfiles import StaticFiles
 from openai import OpenAI
 import sys
 
-print("🟢 FastAPI v5.19 загружен успешно", flush=True)
+print("🟢 FastAPI v5.20 загружен успешно", flush=True)
 
 load_dotenv(dotenv_path="/opt/aianswerline/.env")
 TEST_MODE = os.getenv("TEST_MODE", "false").lower() == "true"
@@ -90,7 +91,7 @@ async def verify_email_otp(email: str = Form(...), code: str = Form(...), phone:
     if expires_at < datetime.utcnow():
         return JSONResponse(content={"status": "error", "message": "Code expired"}, status_code=400)
 
-    cur.execute("UPDATE email_otp SET used = TRUE, phone = %s WHERE id = %s", (phone, otp_id))
+    cur.execute("UPDATE email_otp SET used = TRUE, phone = %s, confirmed = TRUE WHERE id = %s", (phone, otp_id))
     return {"status": "ok", "message": "OTP verified", "otp_id": otp_id}
 
 @app.post("/link_phone")
@@ -230,6 +231,17 @@ async def square_webhook(request: Request):
     except Exception as e:
         print("[SQUARE ERROR]:", str(e))
         return {"status": "error", "details": f"webhook error: {str(e)}"}
+
+@app.post("/clean_expired_otp")
+async def clean_expired_otp():
+    try:
+        cur.execute("""
+            DELETE FROM email_otp
+            WHERE used = FALSE AND expires_at < %s
+        """, (datetime.utcnow(),))
+        return {"status": "ok", "message": "Expired unused OTP entries deleted"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
