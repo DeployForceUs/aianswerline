@@ -1,7 +1,8 @@
 # Версия 4.1 (2025-07-16)
 # 🔕 Отключена вся вставка/создание пользователей после верификации OTP
-# 🔒 Только проверяем код и завершаем, остальное закомментировано построчно
+# 🔒 Только проверяем код и завершаем, остальное отключено по бизнес-решению
 # ✅ Строчка "Отметим, что код использован" оставлена, всё остальное закомментировано
+# ❌ bind_phone полностью закомментирован, маршрут отключён
 # ☑️ Количество строк строго сохранено
 
 from fastapi import APIRouter, Form
@@ -92,33 +93,54 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
         conn.commit()
 
         # === Всё ниже отключено ===
-        # cur.execute("SELECT id, phone, tokens_balance FROM users WHERE LOWER(email) = LOWER(%s)", (email,))
-        # user = cur.fetchone()
-        # if user:
-        #     _, phone, tokens = user
-        #     linked = phone is not None
-        # else:
-        #     cur.execute("SELECT id, phone, tokens_balance FROM users WHERE email IS NULL AND phone IS NOT NULL ORDER BY id DESC LIMIT 1")
-        #     phone_user = cur.fetchone()
-        #     if phone_user:
-        #         user_id, phone, tokens = phone_user
-        #         cur.execute("UPDATE users SET email = %s WHERE id = %s", (email, user_id))
-        #         conn.commit()
-        #         linked = True
-        #     else:
-        #         cur.execute("INSERT INTO users (email, tokens_balance, created_at) VALUES (%s, %s, %s)", (email, 0, datetime.utcnow()))
-        #         conn.commit()
-        #         linked = False
-        #         phone = None
-        #         tokens = 0
-        # return JSONResponse(content={
-        #     "message": "Verified",
-        #     "linked": linked,
-        #     "phone": phone,
-        #     "email": email,
-        #     "tokens": tokens,
-        #     "used": True
-        # })
+        """
+        # Проверим: есть ли юзер с этим email
+        cur.execute("""
+            SELECT id, phone, tokens_balance 
+            FROM users 
+            WHERE LOWER(email) = LOWER(%s)
+        """, (email,))
+        user = cur.fetchone()
+
+        if user:
+            _, phone, tokens = user
+            linked = phone is not None
+
+        else:
+            # Ищем последнего юзера без email, но с номером — через SMS
+            cur.execute("""
+                SELECT id, phone, tokens_balance 
+                FROM users 
+                WHERE email IS NULL AND phone IS NOT NULL
+                ORDER BY id DESC LIMIT 1
+            """)
+            phone_user = cur.fetchone()
+
+            if phone_user:
+                user_id, phone, tokens = phone_user
+                cur.execute("UPDATE users SET email = %s WHERE id = %s", (email, user_id))
+                conn.commit()
+                linked = True
+            else:
+                # Новый пользователь — ни email, ни phone нет
+                cur.execute("""
+                    INSERT INTO users (email, tokens_balance, created_at)
+                    VALUES (%s, %s, %s)
+                """, (email, 0, datetime.utcnow()))
+                conn.commit()
+                linked = False
+                phone = None
+                tokens = 0
+
+        return JSONResponse(content={
+            "message": "Verified",
+            "linked": linked,
+            "phone": phone,
+            "email": email,
+            "tokens": tokens,
+            "used": True
+        })
+        """
 
         return JSONResponse(content={
             "message": "Verified",
@@ -132,6 +154,7 @@ async def verify_otp(email: str = Form(...), code: str = Form(...)):
         if conn:
             conn.close()
 
+"""
 @router.post("/bind_phone")
 async def bind_phone(email: str = Form(...), phone: str = Form(...)):
     try:
@@ -160,3 +183,5 @@ async def bind_phone(email: str = Form(...), phone: str = Form(...)):
     finally:
         if conn:
             conn.close()
+"""
+

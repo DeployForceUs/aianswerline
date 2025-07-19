@@ -1,4 +1,11 @@
+// Версия 2.4 (2025-07-16)
+// ✅ Реализована двухэтапная регистрация: email → code → phone
+// ✅ bindPhone теперь шлёт { code, phone }, как требует backend
+// ✅ showDashboard вызывается после успешной привязки телефона
+// 🛠 savedCode сохраняется после подтверждения
+
 let savedEmail = '';
+let savedCode = '';
 
 function sendOtp() {
   const email = document.getElementById("email").value.toLowerCase();
@@ -28,6 +35,7 @@ function verifyOtp() {
   .then(data => {
     if (data.message === "Verified") {
       document.getElementById("verify-status").innerText = "✅ Verified!";
+      savedCode = code;
       if (data.linked) {
         showDashboard(savedEmail, data.phone, data.tokens || 0);
       } else {
@@ -45,9 +53,9 @@ function bindPhone() {
     phone = "+1" + phone;
   }
 
-  fetch("/bind_phone", {
+  fetch("/link_phone", {
     method: "POST",
-    body: new URLSearchParams({ email: savedEmail, phone })
+    body: new URLSearchParams({ code: savedCode, phone })
   })
   .then(res => res.json())
   .then(data => {

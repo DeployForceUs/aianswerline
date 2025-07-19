@@ -12,7 +12,7 @@
 </head>
 <body>
 
-  <h2>🔐Let'make sure it's you</h2>
+  <h2>🔐Let'go Masha Bergelsoon!)</h2>
   <input id="email" type="email" required placeholder="your@email.com">
   <button onclick="sendOtp()">Send OTP</button>
   <p id="otp-status"></p>
